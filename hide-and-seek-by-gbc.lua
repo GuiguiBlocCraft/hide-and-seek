@@ -1,7 +1,6 @@
 -- name: Hide'n Seek
 -- incompatible: gamemode
 -- description: A hide and seek modified :D\n\n\\#dcdcdc\\Concept by \\#00f000\\Super Keeberghrh\n\\#dcdcdc\\Modified by \\#f0f000\\GuiguiBlocCraft
-
 if VERSION_NUMBER < 37 then
 	print("[HnS] Version " .. VERSION_NUMBER .. " is lower than 37.")
 	djui_popup_create("\\#f00000\\You must use \\#f0f000\\CoopDX 1.0 or more\\#f00000\\ to use this mod.", 3)
@@ -17,10 +16,6 @@ local ROUND_STATE_UNKNOWN_END = 4
 
 -- globals
 gGlobalSyncTable.roundState = ROUND_STATE_WAIT -- current round state
-gGlobalSyncTable.hiderCaps = false
-gGlobalSyncTable.seekerCaps = false
-gGlobalSyncTable.banKoopaShell = false
-gGlobalSyncTable.disableBLJ = false
 gGlobalSyncTable.tickTimer = 0 -- 30 tick per second
 gGlobalSyncTable.selectLevel = LEVEL_CASTLE
 gGlobalSyncTable.selectArea = 1
@@ -38,6 +33,7 @@ local seekerSelected = -1
 local capDuration = 0
 local itsTimeDisplayed = false
 local playersExcluded = {}
+local teleported = true
 local isMenuOpen = false
 local menuSelection = 1
 local inSelection = false
@@ -45,16 +41,17 @@ local advertPU = false
 local puX = 0
 local puZ = 0
 
-HnS = {}
-HnS.titles = {
-	"Castle Main Floor",
-	"Castle Upper Floor",
-	"Castle Basement"
-}
-HnS.levels = {
-	{LEVEL_CASTLE, 1},
-	{LEVEL_CASTLE, 2},
-	{LEVEL_CASTLE, 3}
+HnS = {
+	titles = {
+		"Castle Main Floor",
+		"Castle Upper Floor",
+		"Castle Basement"
+	},
+	levels = {
+		{LEVEL_CASTLE, 1},
+		{LEVEL_CASTLE, 2},
+		{LEVEL_CASTLE, 3}
+	}
 }
 
 -- server settings
@@ -72,8 +69,8 @@ end
 
 -- localize functions to improve performance
 local
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math_floor, math_ceil, math_sin, table_insert, set_camera_mode =
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math.floor, math.ceil, math.sin, table.insert, set_camera_mode
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_ceil, math_sin, table_insert, set_camera_mode =
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.ceil, math.sin, table.insert, set_camera_mode
 
 local function on_or_off(value)
 	if value then return "enabled" end
@@ -92,14 +89,27 @@ local function players_list()
 	return activePlayers
 end
 
-local function start_round()
-	gGlobalSyncTable.selectLevel = HnS.levels[menuSelection][1]
-	gGlobalSyncTable.selectArea = HnS.levels[menuSelection][2]
+local function on_packet_receive(data)
+	if data.round then
+		gGlobalSyncTable.roundState = data.round
+	end
+	if data.level then
+		gGlobalSyncTable.selectLevel = data.level
+	end
+	if data.area then
+		gGlobalSyncTable.selectArea = data.area
+	end
+end
 
+local function network_send_and_self(reliable, data)
+	network_send(reliable, data)
+	on_packet_receive(data)
+end
+
+local function start_round()
 	-- reset seekers
 	for i=0,(MAX_PLAYERS-1) do
 		gPlayerSyncTable[i].seeking = false
-		gPlayerSyncTable[i].isTeleported = false
 	end
 
 	-- pick random seeker
@@ -134,12 +144,19 @@ local function start_round()
 	table_insert(playersExcluded, playerSelected)
 
 	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
-		gGlobalSyncTable.roundState = ROUND_STATE_WAIT
+		network_send_and_self(true, {
+			round = ROUND_STATE_WAIT
+		})
 	end
 
 	playersList[playerSelected].seeking = true
 
-	gGlobalSyncTable.roundState = ROUND_STATE_ACTIVE
+	network_send_and_self(true, {
+		round = ROUND_STATE_ACTIVE,
+		level = HnS.levels[menuSelection][1],
+		area = HnS.levels[menuSelection][2]
+	})
+
 	sRoundTimer = 0
 	seekerSelected = -1
 end
@@ -167,19 +184,27 @@ local function update()
 
 		-- only change state if there are 2+ players
 		if network_player_connected_count() < 2 then
-			gGlobalSyncTable.roundState = ROUND_STATE_WAIT
+			network_send_and_self(true, {
+				round = ROUND_STATE_WAIT
+			})
 		elseif gGlobalSyncTable.roundState == ROUND_STATE_WAIT or gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
-			gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
+			network_send_and_self(true, {
+				round = ROUND_STATE_UNKNOWN_END
+			})
 			sRoundTimer = 0
 		end
 
 		-- check to see if the round should end
 		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 			if not hasHider then
-				gGlobalSyncTable.roundState = ROUND_STATE_SEEKERS_WIN
+				network_send_and_self(true, {
+					round = ROUND_STATE_SEEKERS_WIN
+				})
 				sRoundTimer = 0
 			elseif not hasSeeker then
-				gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
+				network_send_and_self(true, {
+					round = ROUND_STATE_UNKNOWN_END
+				})
 				sRoundTimer = 0
 			end
 		end
@@ -215,10 +240,6 @@ end
 
 --- @param m MarioState
 local function mario_update(m)
-	if gGlobalSyncTable.disableBLJ and m.forwardVel <= -55 then
-		m.forwardVel = -55
-	end
-
 	-- this code runs for all players
 	local s = gPlayerSyncTable[m.playerIndex]
 
@@ -313,22 +334,12 @@ local function mario_update(m)
 		cannonTimer = 0
 	end
 
-	-- remove caps
-	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE
-		and ((gGlobalSyncTable.seekerCaps and s.seeking)
-			or (gGlobalSyncTable.hiderCaps and not s.seeking)) then
-				m.flags = m.flags & ~MARIO_WING_CAP -- remove wing cap if seeking/hiding
-				m.flags = m.flags & ~MARIO_METAL_CAP -- remove metal cap if seeking/hiding
-				stop_cap_music()
-				m.capTimer = 0
-	end
-
 	-- warp to the beninging
-	if s.isTeleported == false then
+	if teleported == false then
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
 		m.health = 0x880
 		m.specialTripleJump = 0
-		s.isTeleported = true
+		teleported = true
 	end
 
 	m.numLives = 99
@@ -427,7 +438,6 @@ local function on_player_connected(m)
 	local n = gNetworkPlayers[m.playerIndex]
 
 	s.seeking = true
-	s.isTeleported = true
 	network_player_set_description(gNetworkPlayers[m.playerIndex], "seeker", 255, 64, 64, 255)
 
 	if clientInitialized then
@@ -648,24 +658,6 @@ local function on_hider_cap_command()
 	return true
 end
 
-local function on_seeker_cap_command()
-	gGlobalSyncTable.seekerCaps = not gGlobalSyncTable.seekerCaps
-	djui_chat_message_create("Seeker Caps: " .. on_or_off(gGlobalSyncTable.seekerCaps))
-	return true
-end
-
-local function on_koopa_shell_command()
-	gGlobalSyncTable.banKoopaShell = not gGlobalSyncTable.banKoopaShell
-	djui_chat_message_create("Koopa Shells: " .. on_or_off(not gGlobalSyncTable.banKoopaShell))
-	return true
-end
-
-local function on_blj_command()
-	gGlobalSyncTable.disableBLJ = not gGlobalSyncTable.disableBLJ
-	djui_chat_message_create("BLJs: " .. on_or_off(not gGlobalSyncTable.disableBLJ))
-	return true
-end
-
 local function on_start_command()
 	isMenuOpen = true
 	menuSelection = gGlobalSyncTable.selectArea
@@ -674,11 +666,22 @@ local function on_start_command()
 end
 
 local function on_reset_command()
-	gGlobalSyncTable.roundState = ROUND_STATE_RESETING
+	network_send_and_self(true, {
+		round = ROUND_STATE_RESETING
+	})
 	sRoundTimer = 0
 	seekerSelected = -1
 	playersExcluded = {}
 
+	for i = 0, (MAX_PLAYERS - 1) do
+		gPlayerSyncTable[i].seeking = true
+	end
+
+	return true
+end
+
+local function on_ping_command()
+	djui_chat_message_create("Ping of " .. np.ping .. " ms.")
 	return true
 end
 
@@ -739,16 +742,20 @@ local function on_round_state_changed(_, oldVal, newVal)
 	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, gMarioStates[0].marioObj.header.gfx.cameraToObject)
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+		local npT
+
 		for i = 0, (MAX_PLAYERS-1) do
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
-				local npT = gNetworkPlayers[i]
-
-				djui_chat_message_create("\\#a0ffa0\\Game started!")
-				djui_chat_message_create("\\#ffa0a0\\" .. npT.name .. " was selected as seeker!")
+				npT = gNetworkPlayers[i]
+				break
 			end
 		end
 
+		djui_chat_message_create("\\#a0ffa0\\Game started!")
+		djui_chat_message_create("\\#ffa0a0\\" .. npT.name .. " was selected as seeker!")
+
 		itsTimeDisplayed = true
+		teleported = false
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
 		djui_chat_message_create("\\#ffa0a0\\Game was stopped and reset!")
 	end
@@ -789,12 +796,6 @@ local function on_seeking_changed(tag, oldVal, newVal)
 	end
 end
 
-local function allow_interact(_, _, intee)
-	if intee == INTERACT_KOOPA_SHELL and gGlobalSyncTable.banKoopaShell then
-		return false
-	end
-end
-
 local function allow_pvp_attack(m1, m2)
 	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE then
 		return true
@@ -810,10 +811,7 @@ local function allow_pvp_attack(m1, m2)
 	return s1.seeking ~= s2.seeking
 end
 
------------
--- hooks --
------------
-
+--- HOOKS
 hook_event(HOOK_UPDATE, update)
 hook_event(HOOK_ON_SCREEN_TRANSITION, screen_transition)
 hook_event(HOOK_BEFORE_SET_MARIO_ACTION, before_set_mario_action)
@@ -835,8 +833,8 @@ hook_event(HOOK_ON_HUD_RENDER_BEHIND, function()
 	hud_timers_cap_render()
 end)
 hook_event(HOOK_ON_PAUSE_EXIT, on_pause_exit)
-hook_event(HOOK_ALLOW_INTERACT, allow_interact)
 hook_event(HOOK_USE_ACT_SELECT, function() return false end)
+hook_event(HOOK_ON_PACKET_RECEIVE, on_packet_receive)
 
 if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
@@ -844,10 +842,8 @@ if network_is_server() then
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
 	hook_chat_command("hiders-caps", "Turn caps for hiders on or off", on_hider_cap_command)
-	hook_chat_command("seekers-caps", "Turn caps for seekers on or off", on_seeker_cap_command)
-	hook_chat_command("koopa-shell", "Turn the koopa shell on or off", on_koopa_shell_command)
-	hook_chat_command("bljs", "Turn bljs on or off", on_blj_command)
 end
+hook_chat_command("ping", "Check latency to you and the host", on_ping_command)
 
 -- call functions when certain sync table values change
 hook_on_sync_table_change(gGlobalSyncTable, "roundState", nil, on_round_state_changed)
