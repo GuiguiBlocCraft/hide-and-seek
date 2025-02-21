@@ -13,6 +13,7 @@ local ROUND_STATE_ACTIVE      = 1
 local ROUND_STATE_SEEKERS_WIN = 2
 local ROUND_STATE_RESETING    = 3
 local ROUND_STATE_UNKNOWN_END = 4
+local ROUND_STATE_TIMEOUT     = 5
 
 -- globals
 gGlobalSyncTable.roundState = ROUND_STATE_WAIT -- current round state
@@ -28,6 +29,7 @@ local clientInitialized = false
 local displayNametags = gServerSettings.nametags
 local sRoundTimer = 0
 local cannonTimer = 0
+local timerBeforeReset = 0
 local seekerIsOut = false
 local seekerSelected = -1
 local capDuration = 0
@@ -201,11 +203,17 @@ local function update()
 					round = ROUND_STATE_SEEKERS_WIN
 				})
 				sRoundTimer = 0
-			elseif not hasSeeker then
-				network_send_and_self(true, {
-					round = ROUND_STATE_UNKNOWN_END
-				})
-				sRoundTimer = 0
+			elseif not hasSeeker then -- if seeker disconnected in game
+				if timerBeforeReset == 0 then
+					timerBeforeReset = sRoundTimer
+				elseif sRoundTimer - timerBeforeReset == 900 then
+					network_send_and_self(true, {
+						round = ROUND_STATE_TIMEOUT
+					})
+					sRoundTimer = 0
+				end
+			elseif hasSeeker and timerBeforeReset > 0 then -- if seeker reconnected in game
+				timerBeforeReset = 0
 			end
 		end
 	end
@@ -450,6 +458,19 @@ local function on_player_disconnected(m)
 	local n = gNetworkPlayers[m.playerIndex]
 
 	djui_chat_message_create("\\#1c1c1c\\[\\#ff0000\\-\\#1c1c1c\\] \\#ffff50\\" .. n.name .. " disconnected")
+
+	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+		local hasSeeker = false
+		for i = 0, (MAX_PLAYERS-1) do
+			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
+				hasSeeker = true
+			end
+		end
+
+		if not hasSeeker then
+			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in 30 seconds if he doesn't rejoin.")
+		end
+	end
 end
 
 local function hud_top_render()
@@ -487,24 +508,24 @@ local function hud_top_render()
 		text = "Game will start soon..."
 	end
 
-	local scale = 2
-
 	-- get width of screen and text
+	local scale = 2
+	local y = 0
+
+	if is_game_paused() then
+		scale = 1
+		y = 50
+	end
+
 	local screenWidth = djui_hud_get_screen_width()
 	local width = djui_hud_measure_text(text) * scale
 
 	local x = (screenWidth - width) / 2
-	local y = 0
 
 	-- render top
 	djui_hud_set_font(FONT_NORMAL)
 	djui_hud_set_color(0, 0, 0, 128)
-	if is_game_paused() then
-		width = djui_hud_measure_text(text)
-		scale = 1
-		x = (screenWidth - width) / 2
-		y = 50
-	else
+	if not is_game_paused() then
 		djui_hud_render_rect(x - 6, y, width + 12, 32 * scale)
 	end
 
@@ -560,6 +581,8 @@ local function hud_center_render()
 			"All hiders",
 			"have been found!"
 		}
+	elseif gGlobalSyncTable.roundState == ROUND_STATE_TIMEOUT then
+		texts = {"Game end!"}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		if seekerIsOut then
 			texts = {
@@ -739,7 +762,7 @@ end
 local function on_round_state_changed(_, oldVal, newVal)
 	if oldVal == newVal then return end
 
-	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
+	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN or gGlobalSyncTable.roundState == ROUND_STATE_TIMEOUT then
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, gMarioStates[0].marioObj.header.gfx.cameraToObject)
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local npT
