@@ -428,10 +428,7 @@ end
 local function before_set_mario_action(m, action)
 	if m.playerIndex == 0 then
 		if action == ACT_EXIT_LAND_SAVE_DIALOG then
-			-- set_camera_mode(m.area.camera, m.area.camera.defMode, 1)
-			print("DEF_MODE = " .. tostring(m.area.camera.defMode))
-			set_camera_mode(m.area.camera, 1, 1)
-			print("ACT_IDLE")
+			set_camera_mode(m.area.camera, m.area.camera.defMode, 1)
 			return ACT_IDLE
 		end
 	end
