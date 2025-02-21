@@ -44,6 +44,7 @@ local advertPU = false
 local puX = 0
 local puZ = 0
 local health = 0x880
+local healthPrev = 0x880
 local healthPos = { prevX = 0, x = 0 }
 local healthShow = false
 local healthTimer = 30
@@ -266,13 +267,14 @@ local function mario_update(m)
 
 	-- displaying custom health
 	health = m.health
-	if health == 0x880 and healthTimer < 30 then
+	if health > 0x780 and health >= healthPrev and healthTimer < 30 then
 		healthTimer = healthTimer + 1
-	elseif health < 0x880 then
+	elseif health <= 0x780 or health < healthPrev then
 		healthTimer = 0
 	end
 
 	healthShow = healthTimer < 30
+	healthPrev = health
 
 	if not s.seeking and seekerIsOut then
 		seekerIsOut = false
@@ -426,7 +428,10 @@ end
 local function before_set_mario_action(m, action)
 	if m.playerIndex == 0 then
 		if action == ACT_EXIT_LAND_SAVE_DIALOG then
-			set_camera_mode(m.area.camera, m.area.camera.defMode, 1)
+			-- set_camera_mode(m.area.camera, m.area.camera.defMode, 1)
+			print("DEF_MODE = " .. tostring(m.area.camera.defMode))
+			set_camera_mode(m.area.camera, 1, 1)
+			print("ACT_IDLE")
 			return ACT_IDLE
 		end
 	end
