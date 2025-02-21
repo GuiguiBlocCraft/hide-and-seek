@@ -12,9 +12,8 @@ end
 local ROUND_STATE_WAIT        = 0
 local ROUND_STATE_ACTIVE      = 1
 local ROUND_STATE_SEEKERS_WIN = 2
-local ROUND_STATE_UNKNOWN_END = 3
-
-local LEVEL_NAME_NONE = "   Level Hidden"
+local ROUND_STATE_RESETING    = 3
+local ROUND_STATE_UNKNOWN_END = 4
 
 -- globals
 gGlobalSyncTable.roundState = ROUND_STATE_WAIT -- current round state
@@ -25,16 +24,19 @@ gGlobalSyncTable.disableBLJ = false
 gGlobalSyncTable.tickTimer = 0 -- 30 tick per second
 gGlobalSyncTable.selectLevel = LEVEL_CASTLE
 gGlobalSyncTable.selectArea = 1
+gGlobalSyncTable.timeToHide = 60 * 30
+djui_set_popup_disabled_override(true)
 
 -- variables
 local np = gNetworkPlayers[0]
+local clientInitialized = false
 local displayNametags = gServerSettings.nametags
 local sRoundTimer = 0
 local cannonTimer = 0
-local secondsToHide = 60
 local seekerIsOut = false
 local seekerSelected = -1
 local capDuration = 0
+local itsTimeDisplayed = false
 local playersExcluded = {}
 local isMenuOpen = false
 local menuSelection = 1
@@ -57,45 +59,21 @@ HnS.levels = {
 
 -- server settings
 gServerSettings.bubbleDeath = 0
-gServerSettings.skipIntro = true
+gServerSettings.skipIntro = 1
 gServerSettings.pauseAnywhere = 0
+gServerSettings.playerInteractions = PLAYER_INTERACTIONS_SOLID
 gLevelValues.disableActs = true
 gLevelValues.zoomOutCameraOnPause = false
 
+-- Remove all names
+for i = 0, COURSE_MAX - 1 do
+	smlua_text_utils_course_name_replace(i, "Level Hidden")
+end
+
 -- localize functions to improve performance
 local
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, djui_popup_create, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math_floor, math_ceil, table_insert, set_camera_mode =
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, djui_popup_create, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math.floor, math.ceil, table.insert, set_camera_mode
-
--- Remove all names
-smlua_text_utils_course_acts_replace(COURSE_BOB, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_WF, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_JRB, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_CCM, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_BBH, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_BBH, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_HMC, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_LLL, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_SSL, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_DDD, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_SL, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_WDW, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_TTM, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_THI, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_TTC, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-smlua_text_utils_course_acts_replace(COURSE_RR, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE, LEVEL_NAME_NONE)
-
-smlua_text_utils_secret_star_replace(COURSE_BITDW, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_BITFS, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_BITS, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_PSS, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_COTMC, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_TOTWC, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_VCUTM, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_WMOTR, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_SA, LEVEL_NAME_NONE)
-smlua_text_utils_secret_star_replace(COURSE_CAKE_END, LEVEL_NAME_NONE)
-
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math_floor, math_ceil, math_sin, table_insert, set_camera_mode =
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, stop_cap_music, dist_between_objects, math.floor, math.ceil, math.sin, table.insert, set_camera_mode
 
 local function on_or_off(value)
 	if value then return "enabled" end
@@ -123,8 +101,6 @@ local function start_round()
 		gPlayerSyncTable[i].seeking = false
 		gPlayerSyncTable[i].isTeleported = false
 	end
-	hasSeeker = false
-	seekerIsOut = false
 
 	-- pick random seeker
 	local playerSelected = 0
@@ -145,6 +121,7 @@ local function start_round()
 			for i = 1, #playersExcluded do
 				if playersExcluded[i] == playerSelected then
 					alreadySeeker = true
+					break
 				end
 			end
 
@@ -156,64 +133,63 @@ local function start_round()
 
 	table_insert(playersExcluded, playerSelected)
 
+	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+		gGlobalSyncTable.roundState = ROUND_STATE_WAIT
+	end
+
 	playersList[playerSelected].seeking = true
 
-	-- set round state
 	gGlobalSyncTable.roundState = ROUND_STATE_ACTIVE
 	sRoundTimer = 0
 	seekerSelected = -1
 end
 
-local function server_update()
-	-- increment timer
-	sRoundTimer = sRoundTimer + 1
-	gGlobalSyncTable.tickTimer = sRoundTimer
+local function update()
+	-- only allow the server to figure out the seeker
+	if network_is_server() then
+		-- increment timer
+		sRoundTimer = sRoundTimer + 1
+		gGlobalSyncTable.tickTimer = sRoundTimer
 
-	-- figure out state of the game
-	local hasSeeker = false
-	local hasHider = false
-	local connectedCount = 0
+		-- figure out state of the game
+		local hasSeeker = false
+		local hasHider = false
 
-	for i = 0, (MAX_PLAYERS-1) do
-		if gNetworkPlayers[i].connected then
-			connectedCount = connectedCount + 1
+		for i = 0, (MAX_PLAYERS-1) do
+			if gNetworkPlayers[i].connected then
+				if gPlayerSyncTable[i].seeking then
+					hasSeeker = true
+				else
+					hasHider = true
+				end
+			end
+		end
 
-			if gPlayerSyncTable[i].seeking then
-				hasSeeker = true
-			else
-				hasHider = true
+		-- only change state if there are 2+ players
+		if network_player_connected_count() < 2 then
+			gGlobalSyncTable.roundState = ROUND_STATE_WAIT
+		elseif gGlobalSyncTable.roundState == ROUND_STATE_WAIT or gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
+			gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
+			sRoundTimer = 0
+		end
+
+		-- check to see if the round should end
+		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+			if not hasHider then
+				gGlobalSyncTable.roundState = ROUND_STATE_SEEKERS_WIN
+				sRoundTimer = 0
+			elseif not hasSeeker then
+				gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
+				sRoundTimer = 0
 			end
 		end
 	end
 
-	-- only change state if there are 2+ players
-	if connectedCount < 2 then
-		gGlobalSyncTable.roundState = ROUND_STATE_WAIT
-		return
-	elseif gGlobalSyncTable.roundState == ROUND_STATE_WAIT then
-		gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
-		sRoundTimer = 0
-	end
-
-	-- check to see if the round should end
-	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
-		if not hasHider then
-			gGlobalSyncTable.roundState = ROUND_STATE_SEEKERS_WIN
-			sRoundTimer = 0
-		elseif not hasSeeker then
-			gGlobalSyncTable.roundState = ROUND_STATE_UNKNOWN_END
-			sRoundTimer = 0
-		end
-	end
-end
-
-local function update()
-	-- only allow the server to figure out the seeker
-	if network_is_server() then
-		server_update()
-	end
-
 	gServerSettings.nametags = displayNametags == 1 and gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE
+
+	if not clientInitialized and np.currAreaSyncValid then
+		clientInitialized = true
+	end
 end
 
 local function screen_transition(trans)
@@ -228,10 +204,9 @@ local function screen_transition(trans)
 				local m = gMarioStates[0]
 				local a = gMarioStates[i]
 
-				if trans == WARP_TRANSITION_FADE_INTO_BOWSER or (m.floor and m.floor.type == SURFACE_DEATH_PLANE and m.pos.y <= m.floorHeight + 2048) then
-					if dist_between_objects(m.marioObj, a.marioObj) <= 4000 and m.playerIndex == 0 then
+				if (trans == WARP_TRANSITION_FADE_INTO_BOWSER or (m.floor and m.floor.type == SURFACE_DEATH_PLANE and m.pos.y <= m.floorHeight + 2048))
+					and dist_between_objects(m.marioObj, a.marioObj) <= 4000 and m.playerIndex == 0 then
 						s.seeking = true
-					end
 				end
 			end
 		end
@@ -290,7 +265,7 @@ local function mario_update(m)
 			end
 		end
 		if (m.controller.buttonPressed & A_BUTTON) ~= 0 then
-			if #players_list() > 1 then
+			if network_player_connected_count() > 1 then
 				isMenuOpen = false
 				start_round()
 			else
@@ -339,23 +314,24 @@ local function mario_update(m)
 	end
 
 	-- remove caps
-	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE then
-		if (gGlobalSyncTable.seekerCaps and s.seeking)
-			or (gGlobalSyncTable.hiderCaps and not s.seeking) then
+	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE
+		and ((gGlobalSyncTable.seekerCaps and s.seeking)
+			or (gGlobalSyncTable.hiderCaps and not s.seeking)) then
 				m.flags = m.flags & ~MARIO_WING_CAP -- remove wing cap if seeking/hiding
 				m.flags = m.flags & ~MARIO_METAL_CAP -- remove metal cap if seeking/hiding
 				stop_cap_music()
 				m.capTimer = 0
-		end
 	end
 
 	-- warp to the beninging
 	if s.isTeleported == false then
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
-		m.numLives = 10
 		m.health = 0x880
+		m.specialTripleJump = 0
 		s.isTeleported = true
 	end
+
+	m.numLives = 99
 
 	-- pu prevention
 	if m.pos.x >= 0 then
@@ -378,16 +354,17 @@ local function mario_update(m)
 	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE then return end
 
 	-- teleport seeker out of the castle, time to hiders to hide
-	if s.seeking and gGlobalSyncTable.tickTimer < (secondsToHide * 30) then
+	if s.seeking and gGlobalSyncTable.tickTimer < gGlobalSyncTable.timeToHide then
 		seekerIsOut = true
 
 		if np.currLevelNum ~= LEVEL_CASTLE_GROUNDS then
 			warp_to_level(LEVEL_CASTLE_GROUNDS, 1, np.currActNum)
 		end
-	elseif s.seeking and gGlobalSyncTable.tickTimer >= (secondsToHide * 30) and seekerIsOut then
+	elseif s.seeking and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide and seekerIsOut then
 		-- teleport seeker in the castle when timer is started
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
 		seekerIsOut = false
+		m.health = 0x880
 	elseif np.currAreaIndex ~= gGlobalSyncTable.selectArea and np.currLevelNum == gGlobalSyncTable.selectLevel
 		or (gGlobalSyncTable.selectArea == 2 and np.currLevelNum == LEVEL_WMOTR)
 		or (gGlobalSyncTable.selectArea ~= 3 and np.currLevelNum == LEVEL_VCUTM) then
@@ -395,8 +372,8 @@ local function mario_update(m)
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
 	end
 
-	if gGlobalSyncTable.tickTimer == (secondsToHide * 30) then
-		djui_popup_create("\\#00ff00\\It's time!!", 1)
+	if not itsTimeDisplayed and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide then
+		itsTimeDisplayed = true
 
 		if s.seeking then
 			djui_chat_message_create("It's time! Try to search and catch hiders \\#f0f000\\:pikario:")
@@ -405,6 +382,8 @@ local function mario_update(m)
 		end
 
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, m.marioObj.header.gfx.cameraToObject)
+	elseif itsTimeDisplayed and gGlobalSyncTable.tickTimer < gGlobalSyncTable.timeToHide then
+		itsTimeDisplayed = false
 	end
 end
 
@@ -434,6 +413,9 @@ local function on_pvp_attack(attacker, victim)
 
 	-- make victim a seeker
 	if victim.playerIndex == 0 and sAttacker.seeking and not sVictim.seeking then
+		local nAttacker = gNetworkPlayers[attacker.playerIndex]
+		djui_chat_message_create("\\#ffff50\\" .. nAttacker.name .. " catch you!")
+
 		sVictim.seeking = true
 	end
 end
@@ -442,12 +424,27 @@ end
 local function on_player_connected(m)
 	-- start out as a seeker
 	local s = gPlayerSyncTable[m.playerIndex]
+	local n = gNetworkPlayers[m.playerIndex]
+
 	s.seeking = true
 	s.isTeleported = true
 	network_player_set_description(gNetworkPlayers[m.playerIndex], "seeker", 255, 64, 64, 255)
+
+	if clientInitialized then
+		djui_chat_message_create("\\#1c1c1c\\[\\#00ff00\\+\\#1c1c1c\\] \\#ffff50\\" .. n.name .. " connected")
+	end
+end
+
+--- @param m MarioState
+local function on_player_disconnected(m)
+	local n = gNetworkPlayers[m.playerIndex]
+
+	djui_chat_message_create("\\#1c1c1c\\[\\#ff0000\\-\\#1c1c1c\\] \\#ffff50\\" .. n.name .. " disconnected")
 end
 
 local function hud_top_render()
+	djui_hud_set_resolution(RESOLUTION_DJUI)
+
 	local text = ""
 	local hideState = false
 
@@ -455,9 +452,10 @@ local function hud_top_render()
 		text = "Waiting for players"
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local sec = math_floor(gGlobalSyncTable.tickTimer / 30)
+		local secLeft = math_floor(gGlobalSyncTable.timeToHide / 30)
 
-		if sec < secondsToHide then
-			local seconds = secondsToHide - sec
+		if sec < secLeft then
+			local seconds = secLeft - sec
 
 			if seconds > 1 then
 				text = seconds .. " seconds left to hide"
@@ -467,31 +465,38 @@ local function hud_top_render()
 
 			hideState = true
 		else
-			local seconds = math_floor((sec - secondsToHide) % 60)
-			local minutes = math_floor((sec - secondsToHide) / 60)
+			local seconds = math_floor((sec - secLeft) % 60)
+			local minutes = math_floor((sec - secLeft) / 60)
 
 			if seconds < 10 then seconds = "0" .. seconds end
 			if minutes < 10 then minutes = "0" .. minutes end
 
-			text = "Time: " .. minutes .. ":" .. seconds
+			text = minutes .. ":" .. seconds
 		end
 	else
 		text = "Game will start soon..."
 	end
 
-	local scale = 0.5
+	local scale = 2
 
 	-- get width of screen and text
 	local screenWidth = djui_hud_get_screen_width()
 	local width = djui_hud_measure_text(text) * scale
 
-	local x = (screenWidth - width) * 0.5
+	local x = (screenWidth - width) / 2
 	local y = 0
 
 	-- render top
 	djui_hud_set_font(FONT_NORMAL)
 	djui_hud_set_color(0, 0, 0, 128)
-	djui_hud_render_rect(x - 6, y, width + 12, 16)
+	if is_game_paused() then
+		width = djui_hud_measure_text(text)
+		scale = 1
+		x = (screenWidth - width) / 2
+		y = 50
+	else
+		djui_hud_render_rect(x - 6, y, width + 12, 32 * scale)
+	end
 
 	if hideState == true then
 		djui_hud_set_color(255, 200, 200, 255)
@@ -520,6 +525,8 @@ local function hud_seeker_render()
 end
 
 local function hud_center_render()
+	djui_hud_set_resolution(RESOLUTION_N64)
+
 	if (gGlobalSyncTable.tickTimer > 90 and cannonTimer == 0 and not advertPU) or isMenuOpen then return end
 
 	-- set text
@@ -539,7 +546,10 @@ local function hud_center_render()
 			"not authorized!"
 		}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
-		texts = {"Seekers win!"}
+		texts = {
+			"All hiders",
+			"have been found!"
+		}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		if seekerIsOut then
 			texts = {
@@ -588,6 +598,8 @@ local function hud_timers_cap_render()
 end
 
 local function select_level_render()
+	djui_hud_set_resolution(RESOLUTION_N64)
+
 	if not isMenuOpen then return end
 
 	local title = "SELECT LEVEL"
@@ -620,7 +632,7 @@ local function select_level_render()
 		if menuSelection - 1 == i - 1 then
 			djui_hud_set_color(255, 255, 255, 255)
 			djui_hud_render_texture(gTextures.star, x - (20 * size), y + (10 * size), size, size)
-			djui_hud_set_color(255, 150, 150, 255)
+			djui_hud_set_color(math_sin(sRoundTimer / 2) * 15 + 240, 150, 150, 255)
 		else
 			djui_hud_set_color(100, 50, 50, 255)
 		end
@@ -655,11 +667,6 @@ local function on_blj_command()
 end
 
 local function on_start_command()
-	if gGlobalSyncTable.roundState == ROUND_STATE_WAIT then
-		djui_chat_message_create("\\#f00000\\Not enough players")
-		return true
-	end
-
 	isMenuOpen = true
 	menuSelection = gGlobalSyncTable.selectArea
 
@@ -667,12 +674,11 @@ local function on_start_command()
 end
 
 local function on_reset_command()
-	gGlobalSyncTable.roundState = ROUND_STATE_WAIT
+	gGlobalSyncTable.roundState = ROUND_STATE_RESETING
 	sRoundTimer = 0
 	seekerSelected = -1
 	playersExcluded = {}
 
-	djui_chat_message_create("Game was stopped and reset!")
 	return true
 end
 
@@ -696,6 +702,29 @@ local function on_define_seeker_command(argument)
 	return true
 end
 
+local function on_change_timer_command(argument)
+	if argument == "" then
+		djui_chat_message_create("Argument must be: \\#a0a0a0\\/timer SECONDS")
+		return true
+	end
+
+	local number = tonumber(argument)
+
+	if number ~= nil then
+		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+			djui_chat_message_create("\\#f00000\\Round is already started! Please do \\#f06060\\/reset\\#f00000\\ before doing this command")
+			return true
+		end
+
+		gGlobalSyncTable.timeToHide = number * 30
+		djui_chat_message_create("You have set the timer for hiders on \\#f06060\\" .. number .. "\\#ffffff\\ seconds")
+	else
+		djui_chat_message_create("\\#ff9090\\" .. argument .. " \\#f00000\\is not a number")
+	end
+
+	return true
+end
+
 local function on_pause_exit()
 	return gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE or gPlayerSyncTable[0].seeking
 end
@@ -704,7 +733,9 @@ end
 -- network callbacks --
 -----------------------
 
-local function on_round_state_changed()
+local function on_round_state_changed(_, oldVal, newVal)
+	if oldVal == newVal then return end
+
 	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, gMarioStates[0].marioObj.header.gfx.cameraToObject)
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
@@ -712,10 +743,14 @@ local function on_round_state_changed()
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
 				local npT = gNetworkPlayers[i]
 
-				djui_popup_create("\\#a0ffa0\\Game started!\n\\#ffa0a0\\" .. npT.name .. " is now a seeker", 1)
-				djui_chat_message_create(npT.name .. " was selected as seeker!")
+				djui_chat_message_create("\\#a0ffa0\\Game started!")
+				djui_chat_message_create("\\#ffa0a0\\" .. npT.name .. " was selected as seeker!")
 			end
 		end
+
+		itsTimeDisplayed = true
+	elseif gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
+		djui_chat_message_create("\\#ffa0a0\\Game was stopped and reset!")
 	end
 end
 
@@ -723,8 +758,8 @@ local function on_seeking_changed(tag, oldVal, newVal)
 	local m = gMarioStates[tag]
 	local npT = gNetworkPlayers[tag]
 
-	-- play sound and create popup if became a seeker
-	if newVal and not oldVal then
+	-- if became a seeker
+	if npT.connected and newVal and not oldVal then
 		local nbHiders = 0
 
 		for i = 0, (MAX_PLAYERS-1) do
@@ -734,9 +769,16 @@ local function on_seeking_changed(tag, oldVal, newVal)
 		end
 
 		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
-			play_sound(SOUND_OBJ_BOWSER_LAUGH, m.marioObj.header.gfx.cameraToObject)
-			djui_popup_create("\\#ffa0a0\\" .. npT.name .. " is now a seeker", 1)
-			djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hiders left)")
+			play_sound(SOUND_MENU_MESSAGE_APPEAR, m.marioObj.header.gfx.cameraToObject)
+
+			if nbHiders > 1 then
+				djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hiders left)")
+			elseif nbHiders == 1 then
+				djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hider left)")
+			else
+				djui_chat_message_create(npT.name .. " is now a seeker")
+				djui_chat_message_create("\\#a0ffa0\\All hiders have been found!")
+			end
 		end
 	end
 
@@ -758,7 +800,7 @@ local function allow_pvp_attack(m1, m2)
 		return true
 	end
 
-	if gGlobalSyncTable.tickTimer < (secondsToHide * 30) then
+	if gGlobalSyncTable.tickTimer < gGlobalSyncTable.timeToHide then
 		return false
 	end
 
@@ -780,16 +822,15 @@ hook_event(HOOK_BEFORE_PHYS_STEP, before_phys_step)
 hook_event(HOOK_ALLOW_PVP_ATTACK, allow_pvp_attack)
 hook_event(HOOK_ON_PVP_ATTACK, on_pvp_attack)
 hook_event(HOOK_ON_PLAYER_CONNECTED, on_player_connected)
+hook_event(HOOK_ON_PLAYER_DISCONNECTED, on_player_disconnected)
 hook_event(HOOK_ON_HUD_RENDER, function()
-	djui_hud_set_resolution(RESOLUTION_N64)
-
 	hud_top_render()
+	hud_center_render()
 	select_level_render()
 end)
 hook_event(HOOK_ON_HUD_RENDER_BEHIND, function()
 	djui_hud_set_resolution(RESOLUTION_N64)
 
-	hud_center_render()
 	hud_seeker_render()
 	hud_timers_cap_render()
 end)
@@ -801,6 +842,7 @@ if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
 	hook_chat_command("seeker", "Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command", on_define_seeker_command)
 	hook_chat_command("reset", "Stop round", on_reset_command)
+	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
 	hook_chat_command("hiders-caps", "Turn caps for hiders on or off", on_hider_cap_command)
 	hook_chat_command("seekers-caps", "Turn caps for seekers on or off", on_seeker_cap_command)
 	hook_chat_command("koopa-shell", "Turn the koopa shell on or off", on_koopa_shell_command)
@@ -808,7 +850,7 @@ if network_is_server() then
 end
 
 -- call functions when certain sync table values change
-hook_on_sync_table_change(gGlobalSyncTable, "roundState", 0, on_round_state_changed)
+hook_on_sync_table_change(gGlobalSyncTable, "roundState", nil, on_round_state_changed)
 
 for i = 0, (MAX_PLAYERS - 1) do
 	gPlayerSyncTable[i].seeking = true
