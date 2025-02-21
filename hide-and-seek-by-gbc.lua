@@ -43,6 +43,10 @@ local inSelection = false
 local advertPU = false
 local puX = 0
 local puZ = 0
+local health = 0x880
+local healthPos = { prevX = 0, x = 0 }
+local healthShow = false
+local healthTimer = 30
 
 HnS = {
 	titles = {
@@ -260,6 +264,16 @@ local function mario_update(m)
 	if m.playerIndex ~= 0 then return end
 	-- for local user only
 
+	-- displaying custom health
+	health = m.health
+	if health == 0x880 and healthTimer < 30 then
+		healthTimer = healthTimer + 1
+	elseif health < 0x880 then
+		healthTimer = 0
+	end
+
+	healthShow = healthTimer < 30
+
 	if not s.seeking and seekerIsOut then
 		seekerIsOut = false
 	end
@@ -351,7 +365,7 @@ local function mario_update(m)
 		teleported = true
 	end
 
-	m.numLives = 99
+	m.numLives = 100
 
 	-- pu prevention
 	if m.pos.x >= 0 then
@@ -631,6 +645,19 @@ local function hud_timers_cap_render()
 	djui_hud_print_text(text, screenWidth - (djui_hud_measure_text(text) * size) - 24, screenHeight - 16, size)
 end
 
+local function hud_vanilla_edit()
+	if healthShow then
+		if healthPos.x < 16 then healthPos.x = healthPos.x + 8 end
+	else
+		if healthPos.x > -64 then healthPos.x = healthPos.x - 8 end
+	end
+
+	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_POWER))
+	hud_render_power_meter_interpolated(health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
+
+	healthPos.prevX = healthPos.x
+end
+
 local function select_level_render()
 	djui_hud_set_resolution(RESOLUTION_N64)
 
@@ -855,6 +882,7 @@ hook_event(HOOK_ON_HUD_RENDER_BEHIND, function()
 
 	hud_seeker_render()
 	hud_timers_cap_render()
+	hud_vanilla_edit()
 end)
 hook_event(HOOK_ON_PAUSE_EXIT, on_pause_exit)
 hook_event(HOOK_USE_ACT_SELECT, function() return false end)
