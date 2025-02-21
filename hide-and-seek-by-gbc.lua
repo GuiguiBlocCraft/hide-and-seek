@@ -30,6 +30,7 @@ local displayNametags = gServerSettings.nametags
 local sRoundTimer = 0
 local cannonTimer = 0
 local timerBeforeReset = 0
+local ticksToReset = 30 * 30
 local seekerIsOut = false
 local seekerSelected = -1
 local capDuration = 0
@@ -206,7 +207,7 @@ local function update()
 			elseif not hasSeeker then -- if seeker disconnected in game
 				if timerBeforeReset == 0 then
 					timerBeforeReset = sRoundTimer
-				elseif sRoundTimer - timerBeforeReset == 900 then
+				elseif sRoundTimer - timerBeforeReset == ticksToReset then
 					network_send_and_self(true, {
 						round = ROUND_STATE_TIMEOUT
 					})
@@ -467,8 +468,8 @@ local function on_player_disconnected(m)
 			end
 		end
 
-		if not hasSeeker then
-			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in 30 seconds if he doesn't rejoin.")
+		if not hasSeeker and #players_list() >= 2 then
+			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " .. math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
 		end
 	end
 end
