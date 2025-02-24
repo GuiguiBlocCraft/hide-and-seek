@@ -80,11 +80,6 @@ local
 hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_ceil, math_sin, table_insert, set_camera_mode =
 hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.ceil, math.sin, table.insert, set_camera_mode
 
-local function on_or_off(value)
-	if value then return "enabled" end
-	return "disabled"
-end
-
 local function players_list()
 	local activePlayers = {}
 
@@ -703,12 +698,6 @@ local function select_level_render()
 		djui_hud_print_text(HnS.titles[i], x, y, size)
 		y = y + 16
 	end
-end
-
-local function on_hider_cap_command()
-	gGlobalSyncTable.hiderCaps = not gGlobalSyncTable.hiderCaps
-	djui_chat_message_create("Hider Caps: " .. on_or_off(gGlobalSyncTable.hiderCaps))
-	return true
 end
 
 local function on_start_command()
