@@ -21,7 +21,6 @@ gGlobalSyncTable.tickTimer = 0 -- 30 tick per second
 gGlobalSyncTable.selectLevel = LEVEL_CASTLE
 gGlobalSyncTable.selectArea = 1
 gGlobalSyncTable.timeToHide = 60 * 30
-djui_set_popup_disabled_override(true)
 
 -- variables
 local np = gNetworkPlayers[0]
@@ -69,6 +68,7 @@ gServerSettings.pauseAnywhere = 0
 gServerSettings.playerInteractions = PLAYER_INTERACTIONS_SOLID
 gLevelValues.disableActs = true
 gLevelValues.zoomOutCameraOnPause = false
+djui_set_popup_disabled_override(true)
 
 -- Remove all names
 for i = 0, COURSE_MAX - 1 do
@@ -692,10 +692,10 @@ local function select_level_render()
 	djui_hud_set_font(FONT_RECOLOR_HUD)
 
 	for i = 1, #HnS.titles do
-		if menuSelection - 1 == i - 1 then
-			djui_hud_set_color(255, 255, 255, 255)
-			djui_hud_render_texture(gTextures.star, x - (20 * size), y + (10 * size), size, size)
-			djui_hud_set_color(math_sin(sRoundTimer / 2) * 15 + 240, 150, 150, 255)
+		if menuSelection== i then
+			local sin = math_sin(sRoundTimer / 2) * 15
+
+			djui_hud_set_color(sin + 240, sin + 150, sin + 150, 255)
 		else
 			djui_hud_set_color(100, 50, 50, 255)
 		end
