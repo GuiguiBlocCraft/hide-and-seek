@@ -32,7 +32,6 @@ local timerBeforeReset = 0
 local ticksToReset = 30 * 30
 local seekerIsOut = false
 local seekerSelected = -1
-local capDuration = 0
 local itsTimeDisplayed = false
 local playersExcluded = {}
 local teleported = true
@@ -42,7 +41,6 @@ local inSelection = false
 local advertPU = false
 local puX = 0
 local puZ = 0
-local health = 0x880
 local healthPrev = 0x880
 local healthPos = { prevX = 0, x = 0 }
 local healthShow = false
@@ -261,15 +259,14 @@ local function mario_update(m)
 	-- for local user only
 
 	-- displaying custom health
-	health = m.health
-	if health > 0x780 and health >= healthPrev and healthTimer < 30 then
+	if m.health > 0x7FF and m.health >= healthPrev and healthTimer < 30 then
 		healthTimer = healthTimer + 1
-	elseif health <= 0x780 or health < healthPrev then
+	elseif m.health <= 0x7FF or m.health < healthPrev then
 		healthTimer = 0
 	end
 
 	healthShow = healthTimer < 30
-	healthPrev = health
+	healthPrev = m.health
 
 	if not s.seeking and seekerIsOut then
 		seekerIsOut = false
@@ -326,8 +323,6 @@ local function mario_update(m)
 
 		m.controller.buttonPressed = 0
 	end
-
-	capDuration = m.capTimer
 
 	if m.action == ACT_IN_CANNON and m.actionState == 2 then
 		cannonTimer = cannonTimer + 1
@@ -536,9 +531,9 @@ local function hud_top_render()
 
 	-- render top
 	djui_hud_set_font(FONT_NORMAL)
-	djui_hud_set_color(0, 0, 0, 128)
 	if not is_game_paused() then
-		djui_hud_render_rect(x - 6, y, width + 12, 32 * scale)
+		djui_hud_set_color(0, 0, 0, 255)
+		djui_hud_print_text(text, x + 4, y + 4, scale)
 	end
 
 	if hideState == true then
@@ -629,9 +624,9 @@ local function hud_center_render()
 end
 
 local function hud_timers_cap_render()
-	if capDuration == 0 then return end
+	if gMarioStates[0].capTimer == 0 then return end
 
-	local text = string.format("CAP %.1f", capDuration / 30)
+	local text = string.format("CAP %.1f", gMarioStates[0].capTimer / 30)
 
 	local screenWidth = djui_hud_get_screen_width()
 	local screenHeight = djui_hud_get_screen_height()
@@ -650,7 +645,8 @@ local function hud_vanilla_edit()
 	end
 
 	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_POWER))
-	hud_render_power_meter_interpolated(health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
+	djui_hud_set_color(255, 255, 255, 255)
+	hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
 
 	healthPos.prevX = healthPos.x
 end
