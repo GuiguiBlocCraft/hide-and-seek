@@ -884,7 +884,6 @@ if network_is_server() then
 	hook_chat_command("seeker", "Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command", on_define_seeker_command)
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
-	hook_chat_command("hiders-caps", "Turn caps for hiders on or off", on_hider_cap_command)
 end
 hook_chat_command("ping", "Check latency to you and the host", on_ping_command)
 
