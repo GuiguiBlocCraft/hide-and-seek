@@ -44,7 +44,7 @@ local puZ = 0
 local healthPrev = 0x880
 local healthPos = { prevX = 0, x = 0 }
 local healthShow = false
-local healthTimer = 30
+local healthTimer = 0
 
 HnS = {
 	titles = {
@@ -259,13 +259,13 @@ local function mario_update(m)
 	-- for local user only
 
 	-- displaying custom health
-	if m.health > 0x7FF and m.health >= healthPrev and healthTimer < 30 then
+	if m.health > 0x7FF and m.health >= healthPrev and healthTimer < 45 then
 		healthTimer = healthTimer + 1
 	elseif m.health <= 0x7FF or m.health < healthPrev then
 		healthTimer = 0
 	end
 
-	healthShow = healthTimer < 30
+	healthShow = healthTimer < 45
 	healthPrev = m.health
 
 	if not s.seeking and seekerIsOut then
