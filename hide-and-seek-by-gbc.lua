@@ -272,7 +272,7 @@ local function mario_update(m)
 		seekerIsOut = false
 	end
 
-	if network_is_server() and (m.controller.buttonDown & L_TRIG) ~= 0 and (m.controller.buttonDown & START_BUTTON) ~= 0 and not isMenuOpen then
+	if network_is_server() and (m.controller.buttonDown & L_TRIG) ~= 0 and (m.controller.buttonDown & START_BUTTON) ~= 0 and not isMenuOpen and not is_game_paused() then
 		isMenuOpen = true
 		menuSelection = gGlobalSyncTable.selectArea
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, m.marioObj.header.gfx.cameraToObject)
