@@ -185,9 +185,7 @@ local function update()
 
 		-- only change state if there are 2+ players
 		if network_player_connected_count() < 2 then
-			network_send_and_self(true, {
-				round = ROUND_STATE_WAIT
-			})
+			gGlobalSyncTable.roundState = ROUND_STATE_WAIT
 		elseif gGlobalSyncTable.roundState == ROUND_STATE_WAIT or gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
 			network_send_and_self(true, {
 				round = ROUND_STATE_UNKNOWN_END
@@ -503,7 +501,7 @@ local function hud_top_render()
 
 			hideState = true
 		else
-			local seconds = math_floor((sec - secLeft) % 60)
+			local seconds = (sec - secLeft) % 60
 			local minutes = math_floor((sec - secLeft) / 60)
 
 			if seconds < 10 then seconds = "0" .. seconds end
@@ -683,7 +681,7 @@ local function select_level_render()
 	djui_hud_set_font(FONT_RECOLOR_HUD)
 
 	for i = 1, #HnS.titles do
-		if menuSelection== i then
+		if menuSelection == i then
 			local sin = math_sin(sRoundTimer / 2) * 15
 
 			djui_hud_set_color(sin + 240, sin + 150, sin + 150, 255)
