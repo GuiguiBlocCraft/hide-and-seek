@@ -19,4 +19,3 @@ Un mod *cache-cache* pour **[Super Mario 64 CoopDX](https://sm64coopdx.com/)**, 
 - `/reset` Stopper la partie
 - `/seeker PLAYER` Sélectionner manuellement quelqu'un pour qu'il soit seeker pour la prochaine partie
 - `/timer SECONDS` Changer le temps d'attente en seconde
-- `/ping` Tester le temps de latence entre vous et l'hôte

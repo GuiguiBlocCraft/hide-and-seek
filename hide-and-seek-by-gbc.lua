@@ -716,11 +716,6 @@ local function on_reset_command()
 	return true
 end
 
-local function on_ping_command()
-	djui_chat_message_create("Ping of " .. np.ping .. " ms.")
-	return true
-end
-
 local function on_define_seeker_command(argument)
 	if argument == "" then
 		djui_chat_message_create("Argument must be: \\#a0a0a0\\/seeker PLAYER_NAME|ID")
@@ -879,7 +874,6 @@ if network_is_server() then
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
 end
-hook_chat_command("ping", "Check latency to you and the host", on_ping_command)
 
 -- call functions when certain sync table values change
 hook_on_sync_table_change(gGlobalSyncTable, "roundState", nil, on_round_state_changed)
