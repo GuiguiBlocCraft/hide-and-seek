@@ -642,7 +642,7 @@ local function hud_vanilla_edit()
 		if healthPos.x > -64 then healthPos.x = healthPos.x - 8 end
 	end
 
-	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_POWER))
+	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_POWER))
 	djui_hud_set_color(255, 255, 255, 255)
 	hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
 
@@ -867,6 +867,20 @@ end)
 hook_event(HOOK_ON_PAUSE_EXIT, on_pause_exit)
 hook_event(HOOK_USE_ACT_SELECT, function() return false end)
 hook_event(HOOK_ON_PACKET_RECEIVE, on_packet_receive)
+hook_event(HOOK_ON_LEVEL_INIT, function()
+	-- 100% save file
+	if not save_file_get_using_backup_slot() then
+		save_file_set_using_backup_slot(true)
+		local file = get_current_save_file_num() - 1
+
+		for course = 0, COURSE_MAX - 1 do
+			save_file_set_star_flags(file, course, 0xFF)
+		end
+
+		save_file_set_flags(0xFFFFFFFF)
+		gMarioStates[0].numStars = COURSE_MAX * 7 + 7
+	end
+end)
 
 if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
