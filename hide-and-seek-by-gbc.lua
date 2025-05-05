@@ -642,9 +642,15 @@ local function hud_vanilla_edit()
 		if healthPos.x > -64 then healthPos.x = healthPos.x - 8 end
 	end
 
-	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_POWER))
+	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
+
 	djui_hud_set_color(255, 255, 255, 255)
 	hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
+
+	if np.currLevelNum ~= LEVEL_CASTLE and np.currLevelNum ~= LEVEL_CASTLE_GROUNDS and np.currLevelNum ~= LEVEL_CASTLE_COURTYARD then
+		djui_hud_set_font(FONT_HUD)
+		djui_hud_print_text("$=" .. gMarioStates[0].numCoins, djui_hud_get_screen_width() - 72, 8, 1)
+	end
 
 	healthPos.prevX = healthPos.x
 end
