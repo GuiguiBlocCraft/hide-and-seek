@@ -648,8 +648,11 @@ local function hud_vanilla_edit()
 	hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
 
 	if np.currLevelNum ~= LEVEL_CASTLE and np.currLevelNum ~= LEVEL_CASTLE_GROUNDS and np.currLevelNum ~= LEVEL_CASTLE_COURTYARD then
+		local width = djui_hud_get_screen_width()
 		djui_hud_set_font(FONT_HUD)
-		djui_hud_print_text("$=" .. gMarioStates[0].numCoins, djui_hud_get_screen_width() - 72, 8, 1)
+		djui_hud_render_texture(gTextures.coin, width - 74, 8, 1, 1)
+		djui_hud_print_text("=", width - 58, 8, 1)
+		djui_hud_print_text(tostring(gMarioStates[0].numCoins), width - 44, 8, 1)
 	end
 
 	healthPos.prevX = healthPos.x
