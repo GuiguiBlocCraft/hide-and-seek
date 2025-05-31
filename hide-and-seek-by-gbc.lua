@@ -479,6 +479,8 @@ local function on_player_disconnected(m)
 end
 
 local function hud_top_render()
+	if np.currActNum == 99 then return end
+
 	djui_hud_set_resolution(RESOLUTION_DJUI)
 
 	local text = ""
@@ -543,7 +545,7 @@ local function hud_top_render()
 end
 
 local function hud_seeker_render()
-	if gPlayerSyncTable[0].seeking and gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
+	if gPlayerSyncTable[0].seeking and gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE and np.currActNum ~= 99 then
 		local text = "You are seeker"
 
 		local scale = 0.4
@@ -622,7 +624,7 @@ local function hud_center_render()
 end
 
 local function hud_timers_cap_render()
-	if gMarioStates[0].capTimer == 0 then return end
+	if np.currActNum == 99 or gMarioStates[0].capTimer == 0 then return end
 
 	local text = string.format("CAP %.1f", gMarioStates[0].capTimer / 30)
 
@@ -636,6 +638,8 @@ local function hud_timers_cap_render()
 end
 
 local function hud_vanilla_edit()
+	if np.currActNum == 99 then return end
+
 	if healthShow then
 		if healthPos.x < 16 then healthPos.x = healthPos.x + 8 end
 	else
