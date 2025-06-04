@@ -38,9 +38,6 @@ local teleported = true
 local isMenuOpen = false
 local menuSelection = 1
 local inSelection = false
-local advertPU = false
-local puX = 0
-local puZ = 0
 local healthPrev = 0x880
 local healthPos = { prevX = 0, x = 0 }
 local healthShow = false
@@ -220,6 +217,14 @@ local function update()
 	if not clientInitialized and np.currAreaSyncValid then
 		clientInitialized = true
 	end
+
+	-- Force several camera configs
+	camera_config_enable_collisions(true)
+	rom_hack_cam_set_collisions(1)
+	camera_romhack_set_zoomed_in_dist(900)
+	camera_romhack_set_zoomed_out_dist(1400)
+	camera_romhack_set_zoomed_in_height(300)
+	camera_romhack_set_zoomed_out_height(450)
 end
 
 local function screen_transition(trans)
@@ -358,21 +363,8 @@ local function mario_update(m)
 	m.numLives = 100
 
 	-- pu prevention
-	if m.pos.x >= 0 then
-		puX = math_floor((8192 + m.pos.x) / 65536)
-	else
-		puX = math_ceil((-8192 + m.pos.x) / 65536)
-	end
-	if m.pos.z >= 0 then
-		puZ = math_floor((8192 + m.pos.z) / 65536)
-	else
-		puZ = math_ceil((-8192 + m.pos.z) / 65536)
-	end
-	if puX ~= 0 or puZ ~= 0 then
-		m.health = 0
-		advertPU = true
-	else
-		advertPU = false
+	if m.playerIndex == 0 and (m.pos.x > 0x7FFF or m.pos.x < -0x8000 or m.pos.z > 0x7FFF or m.pos.z < -0x8000) then
+		warp_restart_level()
 	end
 
 	if gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE then return end
@@ -565,7 +557,7 @@ end
 local function hud_center_render()
 	djui_hud_set_resolution(RESOLUTION_N64)
 
-	if (gGlobalSyncTable.tickTimer > 90 and cannonTimer == 0 and not advertPU) or isMenuOpen then return end
+	if (gGlobalSyncTable.tickTimer > 90 and cannonTimer == 0) or isMenuOpen then return end
 
 	-- set text
 	local texts = {""}
@@ -576,12 +568,6 @@ local function hud_center_render()
 			"",
 			"Ejected out of the",
 			"cannon in " .. tostring(5 - math_floor(cannonTimer / 30)) .. " seconds"
-		}
-	elseif advertPU then
-		texts = {
-			"Camping in",
-			"Parallel universe are",
-			"not authorized!"
 		}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		texts = {
