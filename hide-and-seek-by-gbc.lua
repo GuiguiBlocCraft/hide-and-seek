@@ -354,7 +354,7 @@ local function mario_update(m)
 
 	-- warp to the beninging
 	if teleported == false then
-		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
+		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, 0)
 		m.health = 0x880
 		m.specialTripleJump = 0
 		teleported = true
@@ -374,18 +374,19 @@ local function mario_update(m)
 		seekerIsOut = true
 
 		if np.currLevelNum ~= LEVEL_CASTLE_GROUNDS then
-			warp_to_level(LEVEL_CASTLE_GROUNDS, 1, np.currActNum)
+			warp_to_level(LEVEL_CASTLE_GROUNDS, 1, 0)
 		end
 	elseif s.seeking and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide and seekerIsOut then
 		-- teleport seeker in the castle when timer is started
-		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
+		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, 0)
 		seekerIsOut = false
 		m.health = 0x880
-	elseif np.currAreaIndex ~= gGlobalSyncTable.selectArea and np.currLevelNum == gGlobalSyncTable.selectLevel
+	elseif (np.currAreaIndex ~= gGlobalSyncTable.selectArea and np.currLevelNum == gGlobalSyncTable.selectLevel)
 		or (gGlobalSyncTable.selectArea == 2 and np.currLevelNum == LEVEL_WMOTR)
-		or (gGlobalSyncTable.selectArea ~= 3 and np.currLevelNum == LEVEL_VCUTM) then
+		or (gGlobalSyncTable.selectArea ~= 3 and np.currLevelNum == LEVEL_VCUTM)
+		or np.currActNum == 99 then
 		-- force stage castle if is from different stage
-		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, np.currActNum)
+		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, 0)
 	end
 
 	if not itsTimeDisplayed and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide then
