@@ -72,8 +72,8 @@ end
 
 -- localize functions to improve performance
 local
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_ceil, math_sin, table_insert, set_camera_mode =
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_render_rect, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.ceil, math.sin, table.insert, set_camera_mode
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_sin, table_insert, set_camera_mode =
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.sin, table.insert, set_camera_mode
 
 local function players_list()
 	local activePlayers = {}
@@ -260,6 +260,14 @@ local function mario_update(m)
 
 	if m.playerIndex ~= 0 then return end
 	-- for local user only
+
+	-- reset camera cutscene and velocity
+	if m.area.camera.cutscene == CUTSCENE_EXIT_PAINTING_SUCC
+		or m.area.camera.cutscene == CUTSCENE_EXIT_SPECIAL_SUCC
+		or m.area.camera.cutscene == CUTSCENE_EXIT_BOWSER_SUCC then
+			m.area.camera.cutscene = 0
+			m.forwardVel = 0
+	end
 
 	-- displaying custom health
 	if m.health > 0x7FF and m.health >= healthPrev and healthTimer < 45 then
