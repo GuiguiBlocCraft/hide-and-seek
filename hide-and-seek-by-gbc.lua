@@ -507,10 +507,13 @@ local function hud_top_render()
 			local seconds = (sec - secLeft) % 60
 			local minutes = math_floor((sec - secLeft) / 60)
 
-			if seconds < 10 then seconds = "0" .. seconds end
-			if minutes < 10 then minutes = "0" .. minutes end
+			local strSeconds = tostring(seconds)
+			local strMinutes = tostring(minutes)
 
-			text = minutes .. ":" .. seconds
+			if seconds < 10 then strSeconds = "0" .. seconds end
+			if minutes < 10 then strMinutes = "0" .. minutes end
+
+			text = strMinutes .. ":" .. strSeconds
 		end
 	else
 		text = "Game will start soon..."
@@ -643,8 +646,10 @@ local function hud_vanilla_edit()
 
 	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
 
-	djui_hud_set_color(255, 255, 255, 255)
-	hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
+	if healthPos.x >= -64 then
+		djui_hud_set_color(255, 255, 255, 255)
+		hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
+	end
 
 	if np.currLevelNum ~= LEVEL_CASTLE and np.currLevelNum ~= LEVEL_CASTLE_GROUNDS and np.currLevelNum ~= LEVEL_CASTLE_COURTYARD then
 		local width = djui_hud_get_screen_width()
@@ -805,7 +810,7 @@ local function on_seeking_changed(tag, oldVal, newVal)
 	local npT = gNetworkPlayers[tag]
 
 	-- if became a seeker
-	if npT.connected and newVal and not oldVal then
+	if clientInitialized and npT.connected and newVal and not oldVal then
 		local nbHiders = 0
 
 		for i = 0, (MAX_PLAYERS-1) do
