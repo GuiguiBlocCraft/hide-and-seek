@@ -360,7 +360,7 @@ local function mario_update(m)
 		cannonTimer = 0
 	end
 
-	-- warp to the beninging
+	-- warp to the beginning
 	if teleported == false then
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, 0)
 		m.health = 0x880
@@ -390,7 +390,7 @@ local function mario_update(m)
 		seekerIsOut = false
 		m.health = 0x880
 	elseif (np.currAreaIndex ~= gGlobalSyncTable.selectArea and np.currLevelNum == gGlobalSyncTable.selectLevel)
-		or (gGlobalSyncTable.selectArea == 2 and np.currLevelNum == LEVEL_WMOTR)
+		or (gGlobalSyncTable.selectArea == 2 and np.currLevelNum == LEVEL_CASTLE_GROUNDS)
 		or (gGlobalSyncTable.selectArea ~= 3 and np.currLevelNum == LEVEL_VCUTM)
 		or np.currActNum == 99 then
 		-- force stage castle if is from different stage
