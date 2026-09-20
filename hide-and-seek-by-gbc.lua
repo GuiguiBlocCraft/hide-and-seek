@@ -318,6 +318,7 @@ local function mario_update(m)
 				isMenuOpen = false
 				start_round()
 			else
+				djui_chat_message_create("\\#f00000\\You must be at least 2 players.")
 				play_sound(SOUND_MENU_CAMERA_BUZZ, m.marioObj.header.gfx.cameraToObject)
 			end
 		end
