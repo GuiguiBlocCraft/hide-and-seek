@@ -43,7 +43,7 @@ local healthPos = { prevX = 0, x = 0 }
 local healthShow = false
 local healthTimer = 0
 
-HnS = {
+_G.HnS = {
 	titles = {
 		"Castle Main Floor",
 		"Castle Upper Floor",
