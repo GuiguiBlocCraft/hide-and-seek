@@ -673,25 +673,27 @@ local function select_level_render()
 	local screenHeight = djui_hud_get_screen_height()
 	local size = 0.7
 
-	local width = djui_hud_measure_text(title)
-	local titleX = (screenWidth / 2) - (width / 2)
+	local textWidth = djui_hud_measure_text(title)
+	local titleX = (screenWidth / 2) - (textWidth / 2)
 
 	djui_hud_set_font(FONT_HUD)
 	djui_hud_set_color(255, 255, 255, 255)
 	djui_hud_print_text(title, titleX, 40, 1)
 
-	local x = (screenWidth / 2) * size
-	local y = (screenHeight / 2) * size
+	local x = (screenWidth / 2)
+	local y = (screenHeight / 2) - 50
 
-	levelNameSizeMax = 0
+	local levelNameSizeMax = 0
 	for i = 1, #HnS.titles do
-		local sizeName = djui_hud_measure_text(HnS.titles[i])
+		local sizeName = djui_hud_measure_text(HnS.titles[i]) * size
 		if sizeName > levelNameSizeMax then
 			levelNameSizeMax = sizeName
 		end
 	end
 
 	djui_hud_set_font(FONT_RECOLOR_HUD)
+
+	x = x - (levelNameSizeMax / 2)
 
 	for i = 1, #HnS.titles do
 		if menuSelection == i then
