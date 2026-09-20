@@ -335,9 +335,9 @@ local function mario_update(m)
 		m.controller.buttonPressed = 0
 	end
 
-	if m.action == ACT_IN_CANNON and m.actionState == 2 then
+	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE and m.action == ACT_IN_CANNON and m.actionState == 2 then
 		cannonTimer = cannonTimer + 1
-		if cannonTimer >= 150 then -- 150 is 5 seconds
+		if cannonTimer >= 150 then -- 5 seconds
 			m.forwardVel = 100 * coss(m.faceAngle.x)
 			m.vel.y = 100 * sins(m.faceAngle.x)
 
@@ -569,19 +569,12 @@ end
 local function hud_center_render()
 	djui_hud_set_resolution(RESOLUTION_N64)
 
-	if (gGlobalSyncTable.tickTimer > 90 and cannonTimer == 0) or isMenuOpen then return end
+	if gGlobalSyncTable.tickTimer > 90 or isMenuOpen then return end
 
 	-- set text
 	local texts = {""}
 
-	if cannonTimer > 0 then
-		texts = {
-			"Camping not permitted!",
-			"",
-			"Ejected out of the",
-			"cannon in " .. tostring(5 - math_floor(cannonTimer / 30)) .. " seconds"
-		}
-	elseif gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
+	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		texts = {
 			"All hiders",
 			"have been found!"
@@ -622,7 +615,7 @@ local function hud_center_render()
 end
 
 local function hud_timers_cap_render()
-	if np.currActNum == 99 or gMarioStates[0].capTimer == 0 then return end
+	if np.currActNum == 99 or gMarioStates[0].capTimer == 0 or cannonTimer > 0 then return end
 
 	local text = string.format("CAP %.1f", gMarioStates[0].capTimer / 30)
 
@@ -633,6 +626,17 @@ local function hud_timers_cap_render()
 	djui_hud_set_font(FONT_HUD)
 	djui_hud_set_color(255, 255, 255, 255)
 	djui_hud_print_text(text, screenWidth - (djui_hud_measure_text(text) * size) - 24, screenHeight - 16, size)
+end
+
+local function hud_cannon_render()
+	if cannonTimer == 0 then return end
+
+	local text = string.format("You will be launched from the cannon in %d seconds", 5 - math_floor(cannonTimer / 30))
+	local size = 0.45
+
+	djui_hud_set_font(FONT_NORMAL)
+	djui_hud_set_color(255, 255, 255, 255)
+	djui_hud_print_text(text, (djui_hud_get_screen_width() / 2) - (djui_hud_measure_text(text) * size / 2), djui_hud_get_screen_height() - 32, size)
 end
 
 local function hud_vanilla_edit()
@@ -870,6 +874,7 @@ hook_event(HOOK_ON_PLAYER_DISCONNECTED, on_player_disconnected)
 hook_event(HOOK_ON_HUD_RENDER, function()
 	hud_top_render()
 	hud_center_render()
+	hud_cannon_render()
 	select_level_render()
 end)
 hook_event(HOOK_ON_HUD_RENDER_BEHIND, function()
