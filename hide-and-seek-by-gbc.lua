@@ -32,7 +32,7 @@ local timerBeforeReset = 0
 local ticksToReset = 30 * 30
 local seekerIsOut = false
 local seekerSelected = -1
-local itsTimeDisplayed = false
+local isTimeDisplayed = false
 local playersExcluded = {}
 local teleported = true
 local isMenuOpen = false
@@ -115,7 +115,8 @@ local function start_round()
 	local playersList = players_list()
 
 	if #playersExcluded >= #playersList then
-		playersExcluded = {}
+		local lastSelected = playersExcluded[#playersExcluded]
+		playersExcluded = { lastSelected }
 	end
 
 	if seekerSelected > -1 then
@@ -398,8 +399,8 @@ local function mario_update(m)
 		warp_to_level(gGlobalSyncTable.selectLevel, gGlobalSyncTable.selectArea, 0)
 	end
 
-	if not itsTimeDisplayed and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide then
-		itsTimeDisplayed = true
+	if not isTimeDisplayed and gGlobalSyncTable.tickTimer >= gGlobalSyncTable.timeToHide then
+		isTimeDisplayed = true
 
 		if s.seeking then
 			djui_chat_message_create("It's time! Try to search and catch hiders \\#f0f000\\:pikario:")
@@ -408,8 +409,8 @@ local function mario_update(m)
 		end
 
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, m.marioObj.header.gfx.cameraToObject)
-	elseif itsTimeDisplayed and gGlobalSyncTable.tickTimer < gGlobalSyncTable.timeToHide then
-		itsTimeDisplayed = false
+	elseif isTimeDisplayed and gGlobalSyncTable.tickTimer < gGlobalSyncTable.timeToHide then
+		isTimeDisplayed = false
 	end
 end
 
@@ -418,7 +419,6 @@ end
 local function before_set_mario_action(m, action)
 	if m.playerIndex == 0 then
 		if action == ACT_EXIT_LAND_SAVE_DIALOG then
-			set_camera_mode(m.area.camera, m.area.camera.defMode, 1)
 			return ACT_IDLE
 		end
 	end
@@ -805,7 +805,7 @@ local function on_round_state_changed(_, oldVal, newVal)
 		djui_chat_message_create("\\#a0ffa0\\Game started!")
 		djui_chat_message_create("\\#ffa0a0\\" .. npT.name .. " was selected as seeker!")
 
-		itsTimeDisplayed = true
+		isTimeDisplayed = true
 		teleported = false
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
 		djui_chat_message_create("\\#ffa0a0\\Game was stopped and reset!")
