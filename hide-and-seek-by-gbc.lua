@@ -834,7 +834,7 @@ local function on_seeking_changed(tag, oldVal, newVal)
 			elseif nbHiders == 1 then
 				djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hider left)")
 			else
-				djui_chat_message_create(npT.name .. " is now a seeker")
+				djui_chat_message_create(npT.name .. " was the last")
 				djui_chat_message_create("\\#a0ffa0\\All hiders have been found!")
 			end
 		end
