@@ -215,10 +215,6 @@ local function update()
 
 	gServerSettings.nametags = displayNametags == 1 and gGlobalSyncTable.roundState ~= ROUND_STATE_ACTIVE
 
-	if not clientInitialized and np.currAreaSyncValid then
-		clientInitialized = true
-	end
-
 	-- Force several camera configs
 	camera_config_enable_collisions(true)
 	rom_hack_cam_set_collisions(1)
@@ -888,6 +884,9 @@ end)
 hook_event(HOOK_ON_PAUSE_EXIT, on_pause_exit)
 hook_event(HOOK_USE_ACT_SELECT, function() return false end)
 hook_event(HOOK_ON_PACKET_RECEIVE, on_packet_receive)
+hook_event(HOOK_ON_SYNC_VALID, function()
+	clientInitialized = true
+end)
 hook_event(HOOK_ON_LEVEL_INIT, function()
 	-- 100% save file
 	if not save_file_get_using_backup_slot() then
@@ -917,4 +916,8 @@ for i = 0, (MAX_PLAYERS - 1) do
 	gPlayerSyncTable[i].seeking = true
 	hook_on_sync_table_change(gPlayerSyncTable[i], "seeking", i, on_seeking_changed)
 	network_player_set_description(gNetworkPlayers[i], "seeker", 255, 64, 64, 255)
+end
+
+if network_is_server() then
+	clientInitialized = true
 end
