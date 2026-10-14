@@ -1,11 +1,6 @@
 -- name: Hide'n Seek
 -- incompatible: gamemode
 -- description: A hide and seek modified :D\n\n\\#dcdcdc\\Concept by \\#00f000\\Super Keeberghrh\n\\#dcdcdc\\Modified by \\#f0f000\\GuiguiBlocCraft
-if VERSION_NUMBER < 37 then
-	print("[HnS] Version " .. VERSION_NUMBER .. " is lower than 37.")
-	djui_popup_create("\\#f00000\\You must use \\#f0f000\\CoopDX 1.0 or more\\#f00000\\ to use this mod.", 3)
-	return 0
-end
 
 -- constants
 local ROUND_STATE_WAIT        = 0
