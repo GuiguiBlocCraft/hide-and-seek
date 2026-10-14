@@ -1,21 +1,20 @@
 # Hide and Seek
 
-Un mod *cache-cache* pour **[Super Mario 64 CoopDX](https://sm64coopdx.com/)**, originalement créé par **Super Keeberghrh** et modifié par **GuiguiBlocCraft**.
+A *hide-and-seek* mod for **[Super Mario 64 CoopDX](https://sm64coopdx.com/)**, originally created by **Super Keeberghrh** and edited by **GuiguiBlocCraft**.
 
-## Les fonctionnalitées
+## Features
 
-- Code amélioré et quelques bugs corrigés 🙃
-- Nom des niveaux désactivés (remplacé par "Level hidden")
-- Temps d'attente pour les seekers
-- Notification désactivée
-- Vies infinies
-- Amélioration et ajout quelques informations visuelles
-- Temps d'attente si le seeker se déconnecte malencontreusement
+- Improved code and fixed some bugs 🙃
+- Level name disabled (replaced by "Level hidden")
+- Waiting time for seekers
+- Notifications disabled
+- Infinite lives
+- Improved and added some visual information
+- Added a timer to prevent disconnects for all seekers
 
+## Commands
 
-## Les commandes
-
-- `/start` (ou **L** + **START**) Sélection de l'étage du château et démarrer la partie
-- `/reset` Stopper la partie
-- `/seeker PLAYER` Sélectionner manuellement quelqu'un pour qu'il soit seeker pour la prochaine partie
-- `/timer SECONDS` Changer le temps d'attente en seconde
+- `/start` (or **L** + **START**) Select the castle area and start the game
+- `/reset` Stop the game
+- `/seeker PLAYER` Select the next seeker before starting
+- `/timer SECONDS` Change the waiting time in seconds
