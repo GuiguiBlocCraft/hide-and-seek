@@ -95,6 +95,8 @@ local function on_packet_receive(data)
 
 	if data.attackedBy and data.from then
 		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
+	elseif data.from then
+		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ died and became a seeker")
 	end
 end
 
@@ -238,6 +240,10 @@ local function screen_transition(trans)
 				if (trans == WARP_TRANSITION_FADE_INTO_BOWSER or (m.floor and m.floor.type == SURFACE_DEATH_PLANE and m.pos.y <= m.floorHeight + 2048))
 					and dist_between_objects(m.marioObj, a.marioObj) <= 4000 and m.playerIndex == 0 then
 						s.seeking = true
+
+						network_send_and_self(false, {
+							from = np.name
+						})
 				end
 			end
 		end
