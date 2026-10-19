@@ -92,6 +92,10 @@ local function on_packet_receive(data)
 	if data.area then
 		gGlobalSyncTable.selectArea = data.area
 	end
+
+	if data.attackedBy and data.from then
+		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
+	end
 end
 
 local function network_send_and_self(reliable, data)
@@ -430,8 +434,10 @@ local function on_pvp_attack(attacker, victim)
 
 	-- make victim a seeker
 	if victim.playerIndex == 0 and sAttacker.seeking and not sVictim.seeking then
-		local nAttacker = gNetworkPlayers[attacker.playerIndex]
-		djui_chat_message_create("\\#ffff50\\" .. nAttacker.name .. " catch you!")
+		network_send_and_self(false, {
+			attackedBy = gNetworkPlayers[attacker.playerIndex].name,
+			from = gNetworkPlayers[victim.playerIndex].name
+		})
 
 		sVictim.seeking = true
 	end
@@ -821,11 +827,10 @@ local function on_seeking_changed(tag, oldVal, newVal)
 			play_sound(SOUND_MENU_MESSAGE_APPEAR, m.marioObj.header.gfx.cameraToObject)
 
 			if nbHiders > 1 then
-				djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hiders left)")
+				djui_chat_message_create(nbHiders .. " hiders left")
 			elseif nbHiders == 1 then
-				djui_chat_message_create(npT.name .. " is now a seeker (" .. nbHiders .. " hider left)")
+				djui_chat_message_create(nbHiders .. " hider left")
 			else
-				djui_chat_message_create(npT.name .. " was the last")
 				djui_chat_message_create("\\#a0ffa0\\All hiders have been found!")
 			end
 		end
