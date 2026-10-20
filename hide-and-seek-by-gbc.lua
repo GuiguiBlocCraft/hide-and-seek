@@ -750,7 +750,7 @@ local function on_define_seeker_command(argument)
 
 		if player.connected and (player.name == argument or player.globalIndex == tonumber(argument)) and player.name ~= "" then
 			seekerSelected = player.globalIndex
-			djui_chat_message_create("Seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!")
+			djui_chat_message_create("The next seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!")
 			return true
 		end
 	end
@@ -811,7 +811,7 @@ local function on_round_state_changed(_, oldVal, newVal)
 		isTimeDisplayed = true
 		teleported = false
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_RESETING then
-		djui_chat_message_create("\\#ffa0a0\\Game was stopped and reset!")
+		djui_chat_message_create("\\#ffa0a0\\Game has been stopped and reset!")
 	end
 end
 
