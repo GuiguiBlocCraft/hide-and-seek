@@ -18,27 +18,27 @@ gGlobalSyncTable.selectArea        = 1
 gGlobalSyncTable.timeToHide        = 60 * 30
 
 -- variables
-local np                           = gNetworkPlayers[0]
-local clientInitialized            = false
-local displayNametags              = gServerSettings.nametags
-local sRoundTimer                  = 0
-local cannonTimer                  = 0
-local timerBeforeReset             = 0
-local ticksToReset                 = 30 * 30
-local seekerIsOut                  = false
-local seekerSelected               = -1
-local isTimeDisplayed              = false
-local playersExcluded              = {}
-local teleported                   = true
-local isMenuOpen                   = false
-local menuSelection                = 1
-local inSelection                  = false
-local healthPrev                   = 0x880
-local healthPos                    = { prevX = 0, x = 0 }
-local healthShow                   = false
-local healthTimer                  = 0
+local np = gNetworkPlayers[0]
+local clientInitialized = false
+local displayNametags = gServerSettings.nametags
+local sRoundTimer = 0
+local cannonTimer = 0
+local timerBeforeReset = 0
+local ticksToReset = 30 * 30
+local seekerIsOut = false
+local seekerSelected = -1
+local isTimeDisplayed = false
+local playersExcluded = {}
+local teleported = true
+local isMenuOpen = false
+local menuSelection = 1
+local inSelection = false
+local healthPrev = 0x880
+local healthPos = { prevX = 0, x = 0 }
+local healthShow = false
+local healthTimer = 0
 
-_G.HnS                             = {
+_G.HnS = {
 	titles = {
 		"Castle Main Floor",
 		"Castle Upper Floor",
@@ -68,10 +68,7 @@ end
 -- localize functions to improve performance
 local
 hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_sin, table_insert, set_camera_mode =
-	hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event,
-	play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color,
-	djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level,
-	dist_between_objects, math.floor, math.sin, table.insert, set_camera_mode
+hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.sin, table.insert, set_camera_mode
 
 local function players_list()
 	local activePlayers = {}
@@ -97,8 +94,7 @@ local function on_packet_receive(data)
 	end
 
 	if data.attackedBy and data.from then
-		djui_chat_message_create("\\#f0f000\\" ..
-			data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
+		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
 	elseif data.from then
 		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ died and became a seeker")
 	end
@@ -481,8 +477,7 @@ local function on_player_disconnected(m)
 		end
 
 		if not hasSeeker and #players_list() >= 2 then
-			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " ..
-				math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
+			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " .. math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
 		end
 	end
 end
@@ -644,8 +639,7 @@ local function hud_cannon_render()
 
 	djui_hud_set_font(FONT_NORMAL)
 	djui_hud_set_color(255, 255, 255, 255)
-	djui_hud_print_text(text, (djui_hud_get_screen_width() / 2) - (djui_hud_measure_text(text) * size / 2),
-		djui_hud_get_screen_height() - 32, size)
+	djui_hud_print_text(text, (djui_hud_get_screen_width() / 2) - (djui_hud_measure_text(text) * size / 2), djui_hud_get_screen_height() - 32, size)
 end
 
 local function hud_vanilla_edit()
@@ -658,9 +652,7 @@ local function hud_vanilla_edit()
 	end
 
 	djui_hud_set_color(255, 255, 255, 255)
-	hud_set_value(HUD_DISPLAY_FLAGS,
-		hud_get_value(HUD_DISPLAY_FLAGS) &
-		~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
+	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
 
 	if healthPos.x >= -64 then
 		hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
@@ -757,11 +749,7 @@ local function on_define_seeker_command(argument)
 
 		if player.connected and (player.name == argument or player.globalIndex == tonumber(argument)) and player.name ~= "" then
 			seekerSelected = player.globalIndex
-			-- Original text : The next seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!
-			-- By Lin.
-			djui_chat_message_create("\\#ff9090\\" ..
-				player.name ..
-				" \\#ffffff\\ will be the seeker in the next round ( \\#a0a0a0\\/start\\#ffffff\\ to start the round)")
+			djui_chat_message_create("\\#ff9090\\" .. player.name .. " \\#ffffff\\will be the seeker in the next round (\\#a0a0a0\\/start\\#ffffff\\ to start the round)")
 			return true
 		end
 	end
@@ -780,8 +768,7 @@ local function on_change_timer_command(argument)
 
 	if number ~= nil then
 		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
-			djui_chat_message_create(
-				"\\#f00000\\Round is already started! Please do \\#f06060\\/reset\\#f00000\\ before doing this command")
+			djui_chat_message_create("\\#f00000\\Round is already started! Please do \\#f06060\\/reset\\#f00000\\ before doing this command")
 			return true
 		end
 
@@ -922,8 +909,6 @@ end)
 
 if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
-	-- original : Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command
-	-- By Lin.
 	hook_chat_command("seeker", "Set a player as seeker before the next round", on_define_seeker_command)
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
