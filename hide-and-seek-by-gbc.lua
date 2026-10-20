@@ -477,7 +477,7 @@ local function on_player_disconnected(m)
 		end
 
 		if not hasSeeker and #players_list() >= 2 then
-			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " .. math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
+			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be terminated if they do not rejoin within the next " .. math_floor(ticksToReset / 30) .. " seconds!")
 		end
 	end
 end
@@ -773,7 +773,7 @@ local function on_change_timer_command(argument)
 		end
 
 		gGlobalSyncTable.timeToHide = number * 30
-		djui_chat_message_create("You have set the timer for hiders on \\#f06060\\" .. number .. "\\#ffffff\\ seconds")
+		djui_chat_message_create("You have set the timer for hiders to \\#f06060\\" .. number .. "\\#ffffff\\ seconds")
 	else
 		djui_chat_message_create("\\#ff9090\\" .. argument .. " \\#f00000\\is not a number")
 	end
