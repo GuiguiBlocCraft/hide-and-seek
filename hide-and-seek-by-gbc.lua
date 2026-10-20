@@ -406,7 +406,7 @@ local function mario_update(m)
 		if s.seeking then
 			djui_chat_message_create("It's time! Try to search and catch hiders \\#f0f000\\:pikario:")
 		else
-			djui_chat_message_create("It's time! Seeker will catch you \\#f0f000\\:pikario:")
+			djui_chat_message_create("It's time! The seeker will catch you \\#f0f000\\:pikario:")
 		end
 
 		play_sound(SOUND_MENU_CLICK_CHANGE_VIEW, m.marioObj.header.gfx.cameraToObject)
