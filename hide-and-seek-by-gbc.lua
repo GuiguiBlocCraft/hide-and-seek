@@ -3,61 +3,61 @@
 -- description: A hide and seek modified :D\n\n\\#dcdcdc\\Concept by \\#00f000\\Super Keeberghrh\n\\#dcdcdc\\Modified by \\#f0f000\\GuiguiBlocCraft
 
 -- constants
-local ROUND_STATE_WAIT        = 0
-local ROUND_STATE_ACTIVE      = 1
-local ROUND_STATE_SEEKERS_WIN = 2
-local ROUND_STATE_RESETING    = 3
-local ROUND_STATE_UNKNOWN_END = 4
-local ROUND_STATE_TIMEOUT     = 5
+local ROUND_STATE_WAIT             = 0
+local ROUND_STATE_ACTIVE           = 1
+local ROUND_STATE_SEEKERS_WIN      = 2
+local ROUND_STATE_RESETING         = 3
+local ROUND_STATE_UNKNOWN_END      = 4
+local ROUND_STATE_TIMEOUT          = 5
 
 -- globals
-gGlobalSyncTable.roundState = ROUND_STATE_WAIT -- current round state
-gGlobalSyncTable.tickTimer = 0 -- 30 tick per second
-gGlobalSyncTable.selectLevel = LEVEL_CASTLE
-gGlobalSyncTable.selectArea = 1
-gGlobalSyncTable.timeToHide = 60 * 30
+gGlobalSyncTable.roundState        = ROUND_STATE_WAIT -- current round state
+gGlobalSyncTable.tickTimer         = 0                -- 30 tick per second
+gGlobalSyncTable.selectLevel       = LEVEL_CASTLE
+gGlobalSyncTable.selectArea        = 1
+gGlobalSyncTable.timeToHide        = 60 * 30
 
 -- variables
-local np = gNetworkPlayers[0]
-local clientInitialized = false
-local displayNametags = gServerSettings.nametags
-local sRoundTimer = 0
-local cannonTimer = 0
-local timerBeforeReset = 0
-local ticksToReset = 30 * 30
-local seekerIsOut = false
-local seekerSelected = -1
-local isTimeDisplayed = false
-local playersExcluded = {}
-local teleported = true
-local isMenuOpen = false
-local menuSelection = 1
-local inSelection = false
-local healthPrev = 0x880
-local healthPos = { prevX = 0, x = 0 }
-local healthShow = false
-local healthTimer = 0
+local np                           = gNetworkPlayers[0]
+local clientInitialized            = false
+local displayNametags              = gServerSettings.nametags
+local sRoundTimer                  = 0
+local cannonTimer                  = 0
+local timerBeforeReset             = 0
+local ticksToReset                 = 30 * 30
+local seekerIsOut                  = false
+local seekerSelected               = -1
+local isTimeDisplayed              = false
+local playersExcluded              = {}
+local teleported                   = true
+local isMenuOpen                   = false
+local menuSelection                = 1
+local inSelection                  = false
+local healthPrev                   = 0x880
+local healthPos                    = { prevX = 0, x = 0 }
+local healthShow                   = false
+local healthTimer                  = 0
 
-_G.HnS = {
+_G.HnS                             = {
 	titles = {
 		"Castle Main Floor",
 		"Castle Upper Floor",
 		"Castle Basement"
 	},
 	levels = {
-		{LEVEL_CASTLE, 1},
-		{LEVEL_CASTLE, 2},
-		{LEVEL_CASTLE, 3}
+		{ LEVEL_CASTLE, 1 },
+		{ LEVEL_CASTLE, 2 },
+		{ LEVEL_CASTLE, 3 }
 	}
 }
 
 -- server settings
-gServerSettings.bubbleDeath = 0
-gServerSettings.skipIntro = 1
-gServerSettings.pauseAnywhere = 0
+gServerSettings.bubbleDeath        = 0
+gServerSettings.skipIntro          = 1
+gServerSettings.pauseAnywhere      = 0
 gServerSettings.playerInteractions = PLAYER_INTERACTIONS_SOLID
-gLevelValues.disableActs = true
-gLevelValues.zoomOutCameraOnPause = false
+gLevelValues.disableActs           = true
+gLevelValues.zoomOutCameraOnPause  = false
 djui_set_popup_disabled_override(true)
 
 -- Remove all names
@@ -68,12 +68,15 @@ end
 -- localize functions to improve performance
 local
 hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math_floor, math_sin, table_insert, set_camera_mode =
-hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event, play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color, djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level, dist_between_objects, math.floor, math.sin, table.insert, set_camera_mode
+	hook_chat_command, network_player_set_description, hook_on_sync_table_change, network_is_server, hook_event,
+	play_sound, djui_chat_message_create, djui_hud_set_resolution, djui_hud_set_font, djui_hud_set_color,
+	djui_hud_print_text, djui_hud_get_screen_width, djui_hud_get_screen_height, djui_hud_measure_text, warp_to_level,
+	dist_between_objects, math.floor, math.sin, table.insert, set_camera_mode
 
 local function players_list()
 	local activePlayers = {}
 
-	for i = 0, (MAX_PLAYERS-1) do
+	for i = 0, (MAX_PLAYERS - 1) do
 		if gNetworkPlayers[i].connected then
 			table_insert(activePlayers, gPlayerSyncTable[i])
 		end
@@ -94,7 +97,8 @@ local function on_packet_receive(data)
 	end
 
 	if data.attackedBy and data.from then
-		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
+		djui_chat_message_create("\\#f0f000\\" ..
+			data.from .. "\\#ffffff\\ caught by \\#f0f000\\" .. data.attackedBy .. "\\#ffffff\\")
 	elseif data.from then
 		djui_chat_message_create("\\#f0f000\\" .. data.from .. "\\#ffffff\\ died and became a seeker")
 	end
@@ -107,7 +111,7 @@ end
 
 local function start_round()
 	-- reset seekers
-	for i=0,(MAX_PLAYERS-1) do
+	for i = 0, (MAX_PLAYERS - 1) do
 		gPlayerSyncTable[i].seeking = false
 	end
 
@@ -172,7 +176,7 @@ local function update()
 		local hasSeeker = false
 		local hasHider = false
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected then
 				if gPlayerSyncTable[i].seeking then
 					hasSeeker = true
@@ -229,21 +233,20 @@ local function screen_transition(trans)
 	-- if the local player died next to a seeker, make them a seeker
 	local s = gPlayerSyncTable[0]
 	if not s.seeking then
-		for i=1,(MAX_PLAYERS-1) do
+		for i = 1, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gNetworkPlayers[i].currLevelNum == np.currLevelNum and
 				gNetworkPlayers[i].currActNum == np.currActNum and gNetworkPlayers[i].currAreaIndex == np.currAreaIndex
 				and gPlayerSyncTable[i].seeking then
-
 				local m = gMarioStates[0]
 				local a = gMarioStates[i]
 
 				if (trans == WARP_TRANSITION_FADE_INTO_BOWSER or (m.floor and m.floor.type == SURFACE_DEATH_PLANE and m.pos.y <= m.floorHeight + 2048))
 					and dist_between_objects(m.marioObj, a.marioObj) <= 4000 and m.playerIndex == 0 then
-						s.seeking = true
+					s.seeking = true
 
-						network_send_and_self(false, {
-							from = np.name
-						})
+					network_send_and_self(false, {
+						from = np.name
+					})
 				end
 			end
 		end
@@ -267,8 +270,8 @@ local function mario_update(m)
 	if m.area.camera.cutscene == CUTSCENE_EXIT_PAINTING_SUCC
 		or m.area.camera.cutscene == CUTSCENE_EXIT_SPECIAL_SUCC
 		or m.area.camera.cutscene == CUTSCENE_EXIT_BOWSER_SUCC then
-			m.area.camera.cutscene = 0
-			m.forwardVel = 0
+		m.area.camera.cutscene = 0
+		m.forwardVel = 0
 	end
 
 	-- displaying custom health
@@ -471,14 +474,15 @@ local function on_player_disconnected(m)
 
 	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local hasSeeker = false
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
 				hasSeeker = true
 			end
 		end
 
 		if not hasSeeker and #players_list() >= 2 then
-			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " .. math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
+			djui_chat_message_create("\\#f00000\\No seeker detected! Game will be end in " ..
+				math_floor(ticksToReset / 30) .. " seconds if he doesn't rejoin.")
 		end
 	end
 end
@@ -576,7 +580,7 @@ local function hud_center_render()
 	if gGlobalSyncTable.tickTimer > 90 or isMenuOpen then return end
 
 	-- set text
-	local texts = {""}
+	local texts = { "" }
 
 	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		texts = {
@@ -584,7 +588,7 @@ local function hud_center_render()
 			"have been found!"
 		}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_TIMEOUT then
-		texts = {"Game end!"}
+		texts = { "Game end!" }
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		if seekerIsOut then
 			texts = {
@@ -592,7 +596,7 @@ local function hud_center_render()
 				"Please wait outside"
 			}
 		else
-			texts = {"Here we go!"}
+			texts = { "Here we go!" }
 		end
 	end
 
@@ -640,7 +644,8 @@ local function hud_cannon_render()
 
 	djui_hud_set_font(FONT_NORMAL)
 	djui_hud_set_color(255, 255, 255, 255)
-	djui_hud_print_text(text, (djui_hud_get_screen_width() / 2) - (djui_hud_measure_text(text) * size / 2), djui_hud_get_screen_height() - 32, size)
+	djui_hud_print_text(text, (djui_hud_get_screen_width() / 2) - (djui_hud_measure_text(text) * size / 2),
+		djui_hud_get_screen_height() - 32, size)
 end
 
 local function hud_vanilla_edit()
@@ -653,7 +658,9 @@ local function hud_vanilla_edit()
 	end
 
 	djui_hud_set_color(255, 255, 255, 255)
-	hud_set_value(HUD_DISPLAY_FLAGS, hud_get_value(HUD_DISPLAY_FLAGS) & ~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
+	hud_set_value(HUD_DISPLAY_FLAGS,
+		hud_get_value(HUD_DISPLAY_FLAGS) &
+		~(HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_POWER))
 
 	if healthPos.x >= -64 then
 		hud_render_power_meter_interpolated(gMarioStates[0].health, healthPos.prevX, 8, 64, 64, healthPos.x, 8, 64, 64)
@@ -750,12 +757,16 @@ local function on_define_seeker_command(argument)
 
 		if player.connected and (player.name == argument or player.globalIndex == tonumber(argument)) and player.name ~= "" then
 			seekerSelected = player.globalIndex
-			djui_chat_message_create("The next seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!")
+			-- Original text : The next seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!
+			-- By Lin.
+			djui_chat_message_create("\\#ff9090\\" ..
+				player.name ..
+				" \\#ffffff\\ will be the seeker in the next round ( \\#a0a0a0\\/start\\#ffffff\\ to start the round)")
 			return true
 		end
 	end
 
-	djui_chat_message_create("\\#f00000\\Player (or ID) \\#ff9090\\" .. argument .. " \\#f00000\\ is not exist")
+	djui_chat_message_create("\\#f00000\\Player (or ID) \\#ff9090\\" .. argument .. " \\#f00000\\ does not exist")
 	return true
 end
 
@@ -769,7 +780,8 @@ local function on_change_timer_command(argument)
 
 	if number ~= nil then
 		if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
-			djui_chat_message_create("\\#f00000\\Round is already started! Please do \\#f06060\\/reset\\#f00000\\ before doing this command")
+			djui_chat_message_create(
+				"\\#f00000\\Round is already started! Please do \\#f06060\\/reset\\#f00000\\ before doing this command")
 			return true
 		end
 
@@ -798,7 +810,7 @@ local function on_round_state_changed(_, oldVal, newVal)
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local npT
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
 				npT = gNetworkPlayers[i]
 				break
@@ -823,7 +835,7 @@ local function on_seeking_changed(tag, oldVal, newVal)
 	if clientInitialized and npT.connected and newVal and not oldVal then
 		local nbHiders = 0
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and not gPlayerSyncTable[i].seeking then
 				nbHiders = nbHiders + 1
 			end
@@ -910,7 +922,9 @@ end)
 
 if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
-	hook_chat_command("seeker", "Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command", on_define_seeker_command)
+	-- original : Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command
+	-- By Lin.
+	hook_chat_command("seeker", "Set a player as seeker before the next round", on_define_seeker_command)
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
 end
