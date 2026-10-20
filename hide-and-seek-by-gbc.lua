@@ -3,19 +3,19 @@
 -- description: A hide and seek modified :D\n\n\\#dcdcdc\\Concept by \\#00f000\\Super Keeberghrh\n\\#dcdcdc\\Modified by \\#f0f000\\GuiguiBlocCraft
 
 -- constants
-local ROUND_STATE_WAIT        = 0
-local ROUND_STATE_ACTIVE      = 1
-local ROUND_STATE_SEEKERS_WIN = 2
-local ROUND_STATE_RESETING    = 3
-local ROUND_STATE_UNKNOWN_END = 4
-local ROUND_STATE_TIMEOUT     = 5
+local ROUND_STATE_WAIT             = 0
+local ROUND_STATE_ACTIVE           = 1
+local ROUND_STATE_SEEKERS_WIN      = 2
+local ROUND_STATE_RESETING         = 3
+local ROUND_STATE_UNKNOWN_END      = 4
+local ROUND_STATE_TIMEOUT          = 5
 
 -- globals
-gGlobalSyncTable.roundState = ROUND_STATE_WAIT -- current round state
-gGlobalSyncTable.tickTimer = 0 -- 30 tick per second
-gGlobalSyncTable.selectLevel = LEVEL_CASTLE
-gGlobalSyncTable.selectArea = 1
-gGlobalSyncTable.timeToHide = 60 * 30
+gGlobalSyncTable.roundState        = ROUND_STATE_WAIT -- current round state
+gGlobalSyncTable.tickTimer         = 0                -- 30 tick per second
+gGlobalSyncTable.selectLevel       = LEVEL_CASTLE
+gGlobalSyncTable.selectArea        = 1
+gGlobalSyncTable.timeToHide        = 60 * 30
 
 -- variables
 local np = gNetworkPlayers[0]
@@ -45,19 +45,19 @@ _G.HnS = {
 		"Castle Basement"
 	},
 	levels = {
-		{LEVEL_CASTLE, 1},
-		{LEVEL_CASTLE, 2},
-		{LEVEL_CASTLE, 3}
+		{ LEVEL_CASTLE, 1 },
+		{ LEVEL_CASTLE, 2 },
+		{ LEVEL_CASTLE, 3 }
 	}
 }
 
 -- server settings
-gServerSettings.bubbleDeath = 0
-gServerSettings.skipIntro = 1
-gServerSettings.pauseAnywhere = 0
+gServerSettings.bubbleDeath        = 0
+gServerSettings.skipIntro          = 1
+gServerSettings.pauseAnywhere      = 0
 gServerSettings.playerInteractions = PLAYER_INTERACTIONS_SOLID
-gLevelValues.disableActs = true
-gLevelValues.zoomOutCameraOnPause = false
+gLevelValues.disableActs           = true
+gLevelValues.zoomOutCameraOnPause  = false
 djui_set_popup_disabled_override(true)
 
 -- Remove all names
@@ -73,7 +73,7 @@ hook_chat_command, network_player_set_description, hook_on_sync_table_change, ne
 local function players_list()
 	local activePlayers = {}
 
-	for i = 0, (MAX_PLAYERS-1) do
+	for i = 0, (MAX_PLAYERS - 1) do
 		if gNetworkPlayers[i].connected then
 			table_insert(activePlayers, gPlayerSyncTable[i])
 		end
@@ -107,7 +107,7 @@ end
 
 local function start_round()
 	-- reset seekers
-	for i=0,(MAX_PLAYERS-1) do
+	for i = 0, (MAX_PLAYERS - 1) do
 		gPlayerSyncTable[i].seeking = false
 	end
 
@@ -172,7 +172,7 @@ local function update()
 		local hasSeeker = false
 		local hasHider = false
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected then
 				if gPlayerSyncTable[i].seeking then
 					hasSeeker = true
@@ -229,21 +229,20 @@ local function screen_transition(trans)
 	-- if the local player died next to a seeker, make them a seeker
 	local s = gPlayerSyncTable[0]
 	if not s.seeking then
-		for i=1,(MAX_PLAYERS-1) do
+		for i = 1, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gNetworkPlayers[i].currLevelNum == np.currLevelNum and
 				gNetworkPlayers[i].currActNum == np.currActNum and gNetworkPlayers[i].currAreaIndex == np.currAreaIndex
 				and gPlayerSyncTable[i].seeking then
-
 				local m = gMarioStates[0]
 				local a = gMarioStates[i]
 
 				if (trans == WARP_TRANSITION_FADE_INTO_BOWSER or (m.floor and m.floor.type == SURFACE_DEATH_PLANE and m.pos.y <= m.floorHeight + 2048))
 					and dist_between_objects(m.marioObj, a.marioObj) <= 4000 and m.playerIndex == 0 then
-						s.seeking = true
+					s.seeking = true
 
-						network_send_and_self(false, {
-							from = np.name
-						})
+					network_send_and_self(false, {
+						from = np.name
+					})
 				end
 			end
 		end
@@ -267,8 +266,8 @@ local function mario_update(m)
 	if m.area.camera.cutscene == CUTSCENE_EXIT_PAINTING_SUCC
 		or m.area.camera.cutscene == CUTSCENE_EXIT_SPECIAL_SUCC
 		or m.area.camera.cutscene == CUTSCENE_EXIT_BOWSER_SUCC then
-			m.area.camera.cutscene = 0
-			m.forwardVel = 0
+		m.area.camera.cutscene = 0
+		m.forwardVel = 0
 	end
 
 	-- displaying custom health
@@ -471,7 +470,7 @@ local function on_player_disconnected(m)
 
 	if gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local hasSeeker = false
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
 				hasSeeker = true
 			end
@@ -576,7 +575,7 @@ local function hud_center_render()
 	if gGlobalSyncTable.tickTimer > 90 or isMenuOpen then return end
 
 	-- set text
-	local texts = {""}
+	local texts = { "" }
 
 	if gGlobalSyncTable.roundState == ROUND_STATE_SEEKERS_WIN then
 		texts = {
@@ -584,7 +583,7 @@ local function hud_center_render()
 			"have been found!"
 		}
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_TIMEOUT then
-		texts = {"Game end!"}
+		texts = { "Game end!" }
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		if seekerIsOut then
 			texts = {
@@ -592,7 +591,7 @@ local function hud_center_render()
 				"Please wait outside"
 			}
 		else
-			texts = {"Here we go!"}
+			texts = { "Here we go!" }
 		end
 	end
 
@@ -750,12 +749,12 @@ local function on_define_seeker_command(argument)
 
 		if player.connected and (player.name == argument or player.globalIndex == tonumber(argument)) and player.name ~= "" then
 			seekerSelected = player.globalIndex
-			djui_chat_message_create("The next seeker will be \\#ff9090\\" .. player.name .. " \\#ffffff\\after a \\#a0a0a0\\/start\\#ffffff\\ command!")
+			djui_chat_message_create("\\#ff9090\\" .. player.name .. " \\#ffffff\\will be the seeker in the next round (\\#a0a0a0\\/start\\#ffffff\\ to start the round)")
 			return true
 		end
 	end
 
-	djui_chat_message_create("\\#f00000\\Player (or ID) \\#ff9090\\" .. argument .. " \\#f00000\\ is not exist")
+	djui_chat_message_create("\\#f00000\\Player (or ID) \\#ff9090\\" .. argument .. " \\#f00000\\ does not exist")
 	return true
 end
 
@@ -798,7 +797,7 @@ local function on_round_state_changed(_, oldVal, newVal)
 	elseif gGlobalSyncTable.roundState == ROUND_STATE_ACTIVE then
 		local npT
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and gPlayerSyncTable[i].seeking then
 				npT = gNetworkPlayers[i]
 				break
@@ -823,7 +822,7 @@ local function on_seeking_changed(tag, oldVal, newVal)
 	if clientInitialized and npT.connected and newVal and not oldVal then
 		local nbHiders = 0
 
-		for i = 0, (MAX_PLAYERS-1) do
+		for i = 0, (MAX_PLAYERS - 1) do
 			if gNetworkPlayers[i].connected and not gPlayerSyncTable[i].seeking then
 				nbHiders = nbHiders + 1
 			end
@@ -910,7 +909,7 @@ end)
 
 if network_is_server() then
 	hook_chat_command("start", "Start or restart round", on_start_command)
-	hook_chat_command("seeker", "Define a seeker before \\#a0a0a0\\/start\\#ffffff\\ command", on_define_seeker_command)
+	hook_chat_command("seeker", "Set a player as seeker before the next round", on_define_seeker_command)
 	hook_chat_command("reset", "Stop round", on_reset_command)
 	hook_chat_command("timer", "Change timer for hiders", on_change_timer_command)
 end
