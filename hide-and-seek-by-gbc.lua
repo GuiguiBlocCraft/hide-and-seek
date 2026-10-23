@@ -903,7 +903,6 @@ hook_event(HOOK_ON_LEVEL_INIT, function()
 		end
 
 		save_file_set_flags(0xFFFFFFFF)
-		gMarioStates[0].numStars = COURSE_MAX * 7 + 7
 	end
 end)
 
